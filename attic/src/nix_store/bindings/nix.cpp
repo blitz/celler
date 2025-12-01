@@ -84,7 +84,6 @@ RString CPathInfo::ca() {
 // =========
 
 CNixStore::CNixStore() {
-	std::map<std::string, std::string> params;
 	std::lock_guard<std::mutex> lock(g_init_nix_mutex);
 
 	if (!g_init_nix_done) {
@@ -92,7 +91,12 @@ CNixStore::CNixStore() {
 		g_init_nix_done = true;
 	}
 
+#if NIX_VERSION >= 231
+	this->store = nix::openStore(nix::settings.storeUri);
+#else
+	std::map<std::string, std::string> params;
 	this->store = nix::openStore(nix::settings.storeUri.get(), params);
+#endif
 }
 
 RString CNixStore::store_dir() {
