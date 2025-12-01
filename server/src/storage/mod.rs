@@ -58,6 +58,7 @@ pub trait StorageBackend: Send + Sync + std::fmt::Debug {
     async fn delete_file_db(&self, file: &RemoteFile) -> ServerResult<()>;
 
     /// Downloads a file using the current configuration.
+    #[allow(dead_code)]
     async fn download_file(&self, name: String, prefer_stream: bool) -> ServerResult<Download>;
 
     /// Downloads a file using a database reference.
