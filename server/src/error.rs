@@ -131,7 +131,26 @@ impl From<super::access::Error> for ServerError {
     }
 }
 
-impl StdError for ServerError {}
+impl StdError for ServerError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        match &self.kind {
+            ErrorKind::NotFound
+            | ErrorKind::Unauthorized
+            | ErrorKind::InternalServerError
+            | ErrorKind::NoSuchCache
+            | ErrorKind::CacheAlreadyExists
+            | ErrorKind::NoSuchObject
+            | ErrorKind::InvalidCompressionType { .. }
+            | ErrorKind::IncompleteNar => None,
+            ErrorKind::DatabaseError(error) => Some(error.as_ref()),
+            ErrorKind::StorageError(error) => Some(error.as_ref()),
+            ErrorKind::ManifestSerializationError(error) => Some(error),
+            ErrorKind::AccessError(error) => Some(error),
+            ErrorKind::RequestError(error) => Some(error.as_ref()),
+            ErrorKind::AtticError(error) => Some(error),
+        }
+    }
+}
 
 impl IntoResponse for ServerError {
     fn into_response(self) -> Response {
