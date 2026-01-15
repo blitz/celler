@@ -219,7 +219,7 @@ async fn get_nar(
             Download::Url(url) => Ok(Redirect::temporary(&url).into_response()),
             Download::AsyncRead(stream) => {
                 let stream = ReaderStream::new(stream).map_err(|e| {
-                    tracing::error!(%e, "Stream error");
+                    tracing::error!(%e, "Failed to download single-chunk file");
                     e
                 });
                 let body = Body::from_stream(stream);
@@ -244,8 +244,10 @@ async fn get_nar(
             match storage
                 .download_file_db(&chunk.remote_file.0, true)
                 .await
-                .map_err(io_error)?
-            {
+                .map_err(|e| {
+                    tracing::error!(%e, "Failed to download chunk");
+                    io_error(e)
+                })? {
                 Download::Url(_) => Err(IoError::new(
                     IoErrorKind::Other,
                     "URLs not supported for NAR reassembly",
@@ -263,7 +265,7 @@ async fn get_nar(
         // TODO: Make num_prefetch configurable
         // The ideal size depends on the average chunk size
         let merged = merge_chunks(chunks, streamer, storage, 10).map_err(|e| {
-            tracing::error!(%e, "Stream error");
+            tracing::error!(%e, "Merging chunks failed");
             e
         });
         let body = Body::from_stream(merged);
