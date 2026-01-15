@@ -6,6 +6,7 @@ use anyhow::Result;
 use clap::{Parser, ValueEnum};
 use tokio::join;
 use tokio::task::spawn;
+use tracing::level_filters::LevelFilter;
 use tracing_error::ErrorLayer;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
@@ -101,8 +102,12 @@ async fn main() -> Result<()> {
 }
 
 fn init_logging(tokio_console: bool) {
-    let env_filter = EnvFilter::from_default_env();
-    let fmt_layer = tracing_subscriber::fmt::layer().with_filter(env_filter);
+    let env_filter = EnvFilter::builder()
+        .with_default_directive(LevelFilter::DEBUG.into())
+        .from_env_lossy();
+    let fmt_layer = tracing_subscriber::fmt::layer()
+        .json()
+        .with_filter(env_filter);
 
     let error_layer = ErrorLayer::default();
 
