@@ -5,8 +5,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 use aws_config::{retry::RetryConfig, BehaviorVersion};
 use aws_sdk_s3::{
-    config::Builder as S3ConfigBuilder,
-    config::{Credentials, Region},
+    config::{Builder as S3ConfigBuilder, Credentials, Region, StalledStreamProtectionConfig},
     operation::get_object::builders::GetObjectFluentBuilder,
     presigning::PresigningConfig,
     types::{CompletedMultipartUpload, CompletedPart},
@@ -80,10 +79,17 @@ pub struct S3RemoteFile {
 
 impl S3Backend {
     pub async fn new(config: S3StorageConfig) -> ServerResult<Self> {
+        let stalled_stream_protection = StalledStreamProtectionConfig::enabled()
+            .grace_period(Duration::from_secs(60))
+            .build();
+
+        let retry_config = RetryConfig::adaptive().with_max_attempts(5);
+
         let s3_config = Self::config_builder(&config)
             .await?
             .region(Region::new(config.region.to_owned()))
-            .retry_config(RetryConfig::adaptive())
+            .retry_config(retry_config)
+            .stalled_stream_protection(stalled_stream_protection)
             .build();
 
         Ok(Self {
