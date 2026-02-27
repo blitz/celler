@@ -47,7 +47,5 @@
   in flake-parts.lib.mkFlake { inherit inputs; } {
     imports = modules;
     systems = supportedSystems;
-
-    debug = true;
   };
 }
