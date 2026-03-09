@@ -2,7 +2,6 @@
 
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
-use std::str::FromStr;
 
 use async_stream::try_stream;
 use futures::Stream;
@@ -19,11 +18,20 @@ pub struct NixStore {
 }
 
 impl NixStore {
-    pub fn connect() -> AtticResult<Self> {
-        Ok(Self {
-            // TODO: Make this method async and call nix-instantiate --raw --eval -E 'builtins.storeDir'
-            store_dir: PathBuf::from_str("/nix/store").unwrap()
-        })
+    pub async fn connect() -> AtticResult<Self> {
+        let output = Command::new("nix-instantiate")
+            .args(["--raw", "--eval", "-E", "builtins.storeDir"])
+            .output()
+            .await?;
+
+        if !output.status.success() {
+            return Err(std::io::Error::other("nix-instantiate failed to evaluate builtins.storeDir").into());
+        }
+
+        let store_dir = PathBuf::from(std::str::from_utf8(&output.stdout)
+            .map_err(|_| std::io::Error::other("nix-instantiate output is not valid UTF-8"))?);
+
+        Ok(Self { store_dir })
     }
 
     /// Returns the Nix store directory.
