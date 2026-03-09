@@ -1,9 +1,13 @@
 //! High-level Nix Store interface.
 
 use std::path::{Path, PathBuf};
+use std::process::Stdio;
 use std::str::FromStr;
 
+use async_stream::try_stream;
 use futures::Stream;
+use tokio::io::AsyncReadExt;
+use tokio::process::Command;
 
 use super::{to_base_name, StorePath, ValidPathInfo};
 use crate::error::AtticResult;
@@ -75,8 +79,36 @@ impl NixStore {
     /// Creates a NAR archive from a path.
     ///
     /// This is akin to `nix-store --dump`.
-    pub fn nar_from_path(&self, _store_path: StorePath) -> impl Stream<Item = AtticResult<Vec<u8>>> {
-        todo!() as futures::stream::Empty<AtticResult<Vec<u8>>>
+    pub fn nar_from_path(&self, store_path: StorePath) -> impl Stream<Item = AtticResult<Vec<u8>>> + Unpin + Send {
+        let full_path = self.get_full_path(&store_path);
+        Box::pin(try_stream! {
+            let mut child = Command::new("nix-store")
+                .arg("--dump")
+                .arg(&full_path)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::null())
+                .spawn()?;
+
+            let mut stdout = child.stdout.take().expect("stdout is piped");
+
+            // This size is arbitrary. We read in "large enough" chunks.
+            let mut buf = vec![0u8; 16 << 20];
+
+            loop {
+                let n = stdout.read(&mut buf).await?;
+                if n == 0 {
+                    break;
+                }
+                yield buf[..n].to_vec();
+            }
+
+            let status = child.wait().await?;
+            if !status.success() {
+                Err(std::io::Error::other(
+                    format!("nix-store --dump exited with {status}"),
+                ))?;
+            }
+        })
     }
 
     /// Returns the closure of a valid path.
