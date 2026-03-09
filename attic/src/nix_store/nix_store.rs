@@ -1,36 +1,24 @@
 //! High-level Nix Store interface.
 
-use std::ffi::OsStr;
-use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::str::FromStr;
 
-use tokio::task::spawn_blocking;
+use futures::Stream;
 
-use super::bindings::{open_nix_store, AsyncWriteAdapter, FfiNixStore};
 use super::{to_base_name, StorePath, ValidPathInfo};
 use crate::error::AtticResult;
-use crate::hash::Hash;
 
 /// High-level wrapper for the Unix Domain Socket Nix Store.
 pub struct NixStore {
-    /// The Nix store FFI.
-    inner: Arc<FfiNixStore>,
-
     /// Path to the Nix store itself.
     store_dir: PathBuf,
 }
 
-#[cfg(feature = "nix_store")]
 impl NixStore {
     pub fn connect() -> AtticResult<Self> {
-        #[allow(unsafe_code)]
-        let inner = unsafe { open_nix_store()? };
-        let store_dir = PathBuf::from(inner.store().store_dir());
-
         Ok(Self {
-            inner: Arc::new(inner),
-            store_dir,
+            // TODO: Make this method async and call nix-instantiate --raw --eval -E 'builtins.storeDir'
+            store_dir: PathBuf::from_str("/nix/store").unwrap()
         })
     }
 
@@ -87,20 +75,8 @@ impl NixStore {
     /// Creates a NAR archive from a path.
     ///
     /// This is akin to `nix-store --dump`.
-    pub fn nar_from_path(&self, store_path: StorePath) -> AsyncWriteAdapter {
-        let inner = self.inner.clone();
-        let (adapter, mut sender) = AsyncWriteAdapter::new();
-        let base_name = Vec::from(store_path.as_base_name_bytes());
-
-        spawn_blocking(move || {
-            // Send all exceptions through the channel, and ignore errors
-            // during sending (the channel may have been closed).
-            if let Err(e) = inner.store().nar_from_path(base_name, sender.clone()) {
-                let _ = sender.rust_error(e);
-            }
-        });
-
-        adapter
+    pub fn nar_from_path(&self, _store_path: StorePath) -> impl Stream<Item = AtticResult<Vec<u8>>> {
+        todo!() as futures::stream::Empty<AtticResult<Vec<u8>>>
     }
 
     /// Returns the closure of a valid path.
@@ -109,40 +85,12 @@ impl NixStore {
     /// returned.
     pub async fn compute_fs_closure(
         &self,
-        store_path: StorePath,
-        flip_directions: bool,
-        include_outputs: bool,
-        include_derivers: bool,
+        _store_path: StorePath,
+        _flip_directions: bool,
+        _include_outputs: bool,
+        _include_derivers: bool,
     ) -> AtticResult<Vec<StorePath>> {
-        let inner = self.inner.clone();
-
-        spawn_blocking(move || {
-            let base_name = store_path.as_base_name_bytes();
-
-            let cxx_vector = inner.store().compute_fs_closure(
-                base_name,
-                flip_directions,
-                include_outputs,
-                include_derivers,
-            )?;
-
-            Ok(cxx_vector
-                .iter()
-                .map(|s| {
-                    let osstr = OsStr::from_bytes(s.as_bytes());
-                    let pb = PathBuf::from(osstr);
-
-                    // Safety: The C++ implementation already checks the StorePath
-                    // for correct format (which also implies valid UTF-8)
-                    #[allow(unsafe_code)]
-                    unsafe {
-                        StorePath::from_base_name_unchecked(pb)
-                    }
-                })
-                .collect())
-        })
-        .await
-        .unwrap()
+        todo!()
     }
 
     /// Returns the closure of a set of valid paths.
@@ -152,87 +100,16 @@ impl NixStore {
     /// returned.
     pub async fn compute_fs_closure_multi(
         &self,
-        store_paths: Vec<StorePath>,
-        flip_directions: bool,
-        include_outputs: bool,
-        include_derivers: bool,
+        _store_paths: Vec<StorePath>,
+        _flip_directions: bool,
+        _include_outputs: bool,
+        _include_derivers: bool,
     ) -> AtticResult<Vec<StorePath>> {
-        let inner = self.inner.clone();
-
-        spawn_blocking(move || {
-            let plain_base_names: Vec<&[u8]> = store_paths
-                .iter()
-                .map(|sp| sp.as_base_name_bytes())
-                .collect();
-
-            let cxx_vector = inner.store().compute_fs_closure_multi(
-                &plain_base_names,
-                flip_directions,
-                include_outputs,
-                include_derivers,
-            )?;
-
-            Ok(cxx_vector
-                .iter()
-                .map(|s| {
-                    let osstr = OsStr::from_bytes(s.as_bytes());
-                    let pb = PathBuf::from(osstr);
-
-                    // Safety: The C++ implementation already checks the StorePath
-                    // for correct format (which also implies valid UTF-8)
-                    #[allow(unsafe_code)]
-                    unsafe {
-                        StorePath::from_base_name_unchecked(pb)
-                    }
-                })
-                .collect())
-        })
-        .await
-        .unwrap()
+       todo!()
     }
 
     /// Returns detailed information on a path.
-    pub async fn query_path_info(&self, store_path: StorePath) -> AtticResult<ValidPathInfo> {
-        let inner = self.inner.clone();
-
-        spawn_blocking(move || {
-            let base_name = store_path.as_base_name_bytes();
-            let mut c_path_info = inner.store().query_path_info(base_name)?;
-
-            // FIXME: Make this more ergonomic and efficient
-            let nar_size = c_path_info.pin_mut().nar_size();
-            let nar_sha256_hash: [u8; 32] =
-                c_path_info.pin_mut().nar_sha256_hash().try_into().unwrap();
-            let references = c_path_info
-                .pin_mut()
-                .references()
-                .iter()
-                .map(|s| {
-                    let osstr = OsStr::from_bytes(s.as_bytes());
-                    PathBuf::from(osstr)
-                })
-                .collect();
-            let sigs = c_path_info
-                .pin_mut()
-                .sigs()
-                .iter()
-                .map(|s| {
-                    let osstr = OsStr::from_bytes(s.as_bytes());
-                    osstr.to_str().unwrap().to_string()
-                })
-                .collect();
-            let ca = c_path_info.pin_mut().ca();
-
-            Ok(ValidPathInfo {
-                path: store_path,
-                nar_size,
-                nar_hash: Hash::Sha256(nar_sha256_hash),
-                references,
-                sigs,
-                ca: if ca.is_empty() { None } else { Some(ca) },
-            })
-        })
-        .await
-        .unwrap()
+    pub async fn query_path_info(&self, _store_path: StorePath) -> AtticResult<ValidPathInfo> {
+        todo!()
     }
 }

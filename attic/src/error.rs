@@ -34,9 +34,6 @@ pub enum AtticError {
 
     /// I/O error: {error}.
     IoError { error: io::Error },
-
-    /// Unknown C++ exception: {exception}.
-    CxxError { exception: String },
 }
 
 impl AtticError {
@@ -49,21 +46,11 @@ impl AtticError {
             Self::SigningError(_) => "SigningError",
             Self::HashError(_) => "HashError",
             Self::IoError { .. } => "IoError",
-            Self::CxxError { .. } => "CxxError",
         }
     }
 }
 
 impl StdError for AtticError {}
-
-#[cfg(feature = "nix_store")]
-impl From<cxx::Exception> for AtticError {
-    fn from(exception: cxx::Exception) -> Self {
-        Self::CxxError {
-            exception: exception.what().to_string(),
-        }
-    }
-}
 
 impl From<io::Error> for AtticError {
     fn from(error: io::Error) -> Self {

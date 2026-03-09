@@ -39,16 +39,10 @@
 //! [libnixstore-c](https://github.com/andir/libnixstore-c). It offers
 //! very limited amount of functionality.
 
-#[cfg(feature = "nix_store")]
-#[allow(unsafe_code)]
-mod bindings;
-
-#[cfg(feature = "nix_store")]
 mod nix_store;
 
 use std::ffi::OsStr;
-#[cfg(target_family = "unix")]
-use std::os::unix::ffi::OsStrExt;
+use std::os::unix::ffi::OsStrExt as _;
 use std::path::{Path, PathBuf};
 
 use lazy_static::lazy_static;
@@ -58,7 +52,6 @@ use serde::{de, Deserialize, Serialize};
 use crate::error::{AtticError, AtticResult};
 use crate::hash::Hash;
 
-#[cfg(feature = "nix_store")]
 pub use nix_store::NixStore;
 
 #[cfg(test)]
@@ -150,7 +143,6 @@ pub struct ValidPathInfo {
     pub ca: Option<String>,
 }
 
-#[cfg_attr(not(feature = "nix_store"), allow(dead_code))]
 impl StorePath {
     /// Creates a StorePath with a base name.
     fn from_base_name(base_name: PathBuf) -> AtticResult<Self> {
@@ -179,7 +171,7 @@ impl StorePath {
     /// The caller must ensure that the name is of a valid format (refer
     /// to the documentations for `STORE_BASE_NAME_REGEX`). Other operations
     /// with this object will assume it's valid.
-    #[allow(unsafe_code)]
+    #[allow(unsafe_code, dead_code)]
     unsafe fn from_base_name_unchecked(base_name: PathBuf) -> Self {
         Self { base_name }
     }
@@ -212,8 +204,8 @@ impl StorePath {
         self.base_name.as_os_str()
     }
 
-    #[cfg_attr(not(feature = "nix_store"), allow(dead_code))]
     #[cfg(target_family = "unix")]
+    #[allow(dead_code)]
     fn as_base_name_bytes(&self) -> &[u8] {
         self.base_name.as_os_str().as_bytes()
     }
@@ -271,7 +263,6 @@ impl<'de> Deserialize<'de> for StorePathHash {
 }
 
 /// Returns the base store name of a path relative to a store root.
-#[cfg_attr(not(feature = "nix_store"), allow(dead_code))]
 fn to_base_name(store_dir: &Path, path: &Path) -> AtticResult<PathBuf> {
     if let Ok(remaining) = path.strip_prefix(store_dir) {
         let first = remaining
