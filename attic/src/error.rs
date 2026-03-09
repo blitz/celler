@@ -34,6 +34,9 @@ pub enum AtticError {
 
     /// I/O error: {error}.
     IoError { error: io::Error },
+
+    /// Invalid path info: {error}
+    InvalidPathInfo { error: serde_json::Error },
 }
 
 impl AtticError {
@@ -46,6 +49,7 @@ impl AtticError {
             Self::SigningError(_) => "SigningError",
             Self::HashError(_) => "HashError",
             Self::IoError { .. } => "IoError",
+            Self::InvalidPathInfo { .. } => "InvalidPathInfo",
         }
     }
 }
@@ -67,5 +71,11 @@ impl From<super::signing::Error> for AtticError {
 impl From<super::hash::Error> for AtticError {
     fn from(error: super::hash::Error) -> Self {
         Self::HashError(error)
+    }
+}
+
+impl From<serde_json::Error> for AtticError {
+    fn from(error: serde_json::Error) -> Self {
+        Self::InvalidPathInfo { error }
     }
 }
