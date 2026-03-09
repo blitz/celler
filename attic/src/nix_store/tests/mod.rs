@@ -5,7 +5,9 @@ use std::ffi::OsStr;
 use std::os::unix::ffi::OsStrExt;
 use std::process::Command;
 
+use futures::StreamExt;
 use serde::de::DeserializeOwned;
+use tokio::io::AsyncWriteExt;
 
 pub mod test_nar;
 
@@ -150,12 +152,14 @@ async fn test_nar_streaming() {
     test_nar.import().await.expect("Could not import test NAR");
 
     let target = test_nar.get_target().expect("Could not create dump target");
-    let writer = target.get_writer().await.expect("Could not get writer");
+    let mut writer = target.get_writer().await.expect("Could not get writer");
 
     let store_path = store.parse_store_path(test_nar.path()).unwrap();
 
-    let stream = store.nar_from_path(store_path);
-    stream.write_all(writer).await.unwrap();
+    let mut stream = store.nar_from_path(store_path);
+    while let Some(chunk) = stream.next().await {
+        writer.write_all(&chunk.unwrap()).await.unwrap();
+    }
 
     target
         .validate()
