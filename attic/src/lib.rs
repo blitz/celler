@@ -28,7 +28,6 @@ pub mod nix_store;
 pub mod signing;
 #[cfg(target_family = "unix")]
 pub mod testing;
-#[cfg(feature = "tokio")]
 pub mod util;
 
 pub use error::{AtticError, AtticResult};
