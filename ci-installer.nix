@@ -41,8 +41,8 @@ let
 
   makeBootstrap = system: let
     package =
-      if system == "x86_64-linux" then self.packages.${system}.attic-client-static
-      else self.packages.${system}.attic-client;
+      if system == "x86_64-linux" then self.packages.${system}.celler-client-static
+      else self.packages.${system}.celler-client;
   in ''
     "${system}" = (mkFakeDerivation {
       name = "${package.name}";

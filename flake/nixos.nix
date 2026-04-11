@@ -1,12 +1,12 @@
 { config, ... }:
 {
   flake.nixosModules = {
-    atticd = {
+    cellerd = {
       imports = [
-        ../nixos/atticd.nix
+        ../nixos/cellerd.nix
       ];
 
-      services.atticd.useFlakeCompatOverlay = false;
+      services.cellerd.useFlakeCompatOverlay = false;
 
       nixpkgs.overlays = [
         config.flake.overlays.default

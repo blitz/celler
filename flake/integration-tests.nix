@@ -11,7 +11,7 @@ in
 {
   options = {
     perSystem = mkPerSystemOption {
-      options.attic.integration-tests = {
+      options.celler.integration-tests = {
         nixpkgsArgs = mkOption {
           type = types.attrsOf types.anything;
           default = {};
@@ -36,7 +36,7 @@ in
     };
 
     perSystem = { self', pkgs, config, system, ... }: let
-      cfg = config.attic.integration-tests;
+      cfg = config.celler.integration-tests;
 
       vmPkgs = import inputs.nixpkgs ({
         inherit system;
@@ -52,7 +52,7 @@ in
         flake = self;
       };
     in {
-      attic.integration-tests = {
+      celler.integration-tests = {
         tests = makeIntegrationTests vmPkgs;
         stableTests = makeIntegrationTests vmPkgsStable;
       };

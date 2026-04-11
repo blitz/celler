@@ -8,7 +8,7 @@
 let
   inherit (lib) types;
 
-  cfg = config.services.atticd;
+  cfg = config.services.cellerd;
 
   # unused when the entrypoint is flake
   flake = import ../flake-compat.nix;
@@ -17,7 +17,7 @@ let
   format = pkgs.formats.toml { };
 
   checkedConfigFile =
-    pkgs.runCommand "checked-attic-server.toml"
+    pkgs.runCommand "checked-celler-server.toml"
       {
         configFile = cfg.configFile;
       }
@@ -31,10 +31,10 @@ let
       '';
 
   celleradmShim = pkgs.writeShellScript "celleradm" ''
-    if [ -n "$ATTICADM_PWD" ]; then
-      cd "$ATTICADM_PWD"
+    if [ -n "$CELLERADM_PWD" ]; then
+      cd "$CELLERADM_PWD"
       if [ "$?" != "0" ]; then
-        >&2 echo "Warning: Failed to change directory to $ATTICADM_PWD"
+        >&2 echo "Warning: Failed to change directory to $CELLERADM_PWD"
       fi
     fi
 
@@ -52,7 +52,7 @@ let
       --property=EnvironmentFile=${cfg.environmentFile} \
       --property=DynamicUser=yes \
       --property=User=${cfg.user} \
-      --property=Environment=ATTICADM_PWD=$(pwd) \
+      --property=Environment=CELLERADM_PWD=$(pwd) \
       --working-directory / \
       -- \
       ${celleradmShim} "$@"
@@ -72,16 +72,16 @@ let
 in
 {
   imports = [
-    (lib.mkRenamedOptionModule [ "services" "atticd" "credentialsFile" ] [ "services" "atticd" "environmentFile" ])
+    (lib.mkRenamedOptionModule [ "services" "cellerd" "credentialsFile" ] [ "services" "cellerd" "environmentFile" ])
   ];
 
   disabledModules = [ "services/networking/atticd.nix" ];
 
   options = {
-    services.atticd = {
-      enable = lib.mkEnableOption "the atticd, the Nix Binary Cache server";
+    services.cellerd = {
+      enable = lib.mkEnableOption "the cellerd, the Nix Binary Cache server";
 
-      package = lib.mkPackageOption pkgs "attic-server" { };
+      package = lib.mkPackageOption pkgs "celler-server" { };
 
       environmentFile = lib.mkOption {
         description = ''
@@ -97,23 +97,23 @@ in
 
       user = lib.mkOption {
         description = ''
-          The user under which attic runs.
+          The user under which celler runs.
         '';
         type = types.str;
-        default = "atticd";
+        default = "cellerd";
       };
 
       group = lib.mkOption {
         description = ''
-          The group under which attic runs.
+          The group under which celler runs.
         '';
         type = types.str;
-        default = "atticd";
+        default = "cellerd";
       };
 
       settings = lib.mkOption {
         description = ''
-          Structured configurations of atticd.
+          Structured configurations of cellerd.
         '';
         type = format.type;
         default = { }; # setting defaults here does not compose well
@@ -121,13 +121,13 @@ in
 
       configFile = lib.mkOption {
         description = ''
-          Path to an existing atticd configuration file.
+          Path to an existing cellerd configuration file.
 
-          By default, it's generated from `services.atticd.settings`.
+          By default, it's generated from `services.cellerd.settings`.
         '';
         type = types.path;
         default = format.generate "server.toml" cfg.settings;
-        defaultText = "generated from `services.atticd.settings`";
+        defaultText = "generated from `services.cellerd.settings`";
       };
 
       mode = lib.mkOption {
@@ -140,7 +140,7 @@ in
 
           'garbage-collector' only runs the garbage collector periodically.
 
-          A simple NixOS-based Attic deployment will typically have one 'monolithic' and any number of 'api-server' nodes.
+          A simple NixOS-based Celler deployment will typically have one 'monolithic' and any number of 'api-server' nodes.
 
           There are several other supported modes that perform one-off operations, but these are the only ones that make sense to run via the NixOS module.
         '';
@@ -169,37 +169,37 @@ in
       {
         assertion = cfg.environmentFile != null;
         message = ''
-          <option>services.atticd.environmentFile</option> is not set.
+          <option>services.cellerd.environmentFile</option> is not set.
 
           Run `openssl genrsa -traditional -out private_key.pem 4096 | base64 -w0` and create a file with the following contents:
 
           ATTIC_SERVER_TOKEN_RS256_SECRET="output from command"
 
-          Then, set `services.atticd.environmentFile` to the quoted absolute path of the file.
+          Then, set `services.cellerd.environmentFile` to the quoted absolute path of the file.
         '';
       }
       {
         assertion = !lib.isStorePath cfg.environmentFile;
         message = ''
-          <option>services.atticd.environmentFile</option> points to a path in the Nix store. The Nix store is globally readable.
+          <option>services.cellerd.environmentFile</option> points to a path in the Nix store. The Nix store is globally readable.
 
           You should use a quoted absolute path to prevent leaking secrets in the Nix store.
         '';
       }
     ];
 
-    services.atticd.settings = {
-      database.url = lib.mkDefault "sqlite:///var/lib/atticd/server.db?mode=rwc";
+    services.cellerd.settings = {
+      database.url = lib.mkDefault "sqlite:///var/lib/cellerd/server.db?mode=rwc";
 
       # "storage" is internally tagged
       # if the user sets something the whole thing must be replaced
       storage = lib.mkDefault {
         type = "local";
-        path = "/var/lib/atticd/storage";
+        path = "/var/lib/cellerd/storage";
       };
     };
 
-    systemd.services.atticd = {
+    systemd.services.cellerd = {
       wantedBy = [ "multi-user.target" ];
       after = [ "network-online.target" ] ++ lib.optionals hasLocalPostgresDB [ "postgresql.service" ];
       requires = lib.optionals hasLocalPostgresDB [ "postgresql.service" ];
@@ -208,7 +208,7 @@ in
       serviceConfig = {
         ExecStart = "${cfg.package}/bin/cellerd -f ${checkedConfigFile} --mode ${cfg.mode}";
         EnvironmentFile = cfg.environmentFile;
-        StateDirectory = "atticd"; # for usage with local storage and sqlite
+        StateDirectory = "cellerd"; # for usage with local storage and sqlite
         DynamicUser = true;
         User = cfg.user;
         Group = cfg.group;
@@ -237,7 +237,7 @@ in
         ReadWritePaths =
           let
             path = cfg.settings.storage.path;
-            isDefaultStateDirectory = path == "/var/lib/atticd" || lib.hasPrefix "/var/lib/atticd/" path;
+            isDefaultStateDirectory = path == "/var/lib/cellerd" || lib.hasPrefix "/var/lib/cellerd/" path;
           in
           lib.optionals (cfg.settings.storage.type or "" == "local" && !isDefaultStateDirectory) [ path ];
         RemoveIPC = true;

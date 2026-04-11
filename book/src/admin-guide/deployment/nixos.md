@@ -30,7 +30,7 @@ Ensure the file is only accessible by root.
 You can import the module in one of two ways:
 
 - Ad-hoc: Import the `nixos/atticd.nix` from [the repository](https://github.com/zhaofengli/attic).
-- Flakes: Add `github:zhaofengli/attic` as an input, then import `attic.nixosModules.atticd`.
+- Flakes: Add `github:zhaofengli/attic` as an input, then import `attic.nixosModules.cellerd`.
 
 ## Configuration
 
@@ -38,11 +38,11 @@ You can import the module in one of two ways:
 
 ```nix
 {
-  services.atticd = {
+  services.cellerd = {
     enable = true;
 
     # Replace with absolute path to your environment file
-    environmentFile = "/etc/atticd.env";
+    environmentFile = "/etc/cellerd.env";
 
     settings = {
       listen = "[::]:8080";

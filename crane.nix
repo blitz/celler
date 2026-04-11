@@ -60,7 +60,7 @@ let
   extraArgs = crossArgs // extraPackageArgs;
 
   cargoArtifacts = craneLib.buildDepsOnly ({
-    pname = "attic";
+    pname = "celler";
     inherit src version nativeBuildInputs buildInputs;
 
     # By default it's "use-symlink", which causes Crane's `inheritCargoArtifactsHook`
@@ -77,12 +77,12 @@ let
   }: let
     cargoPackageArgs = map (p: "-p ${p}") packages;
   in craneLib.buildPackage ({
-    pname = "attic";
+    pname = "celler";
     inherit src version nativeBuildInputs buildInputs cargoArtifacts;
 
     ATTIC_DISTRIBUTOR = "attic";
 
-    # See comment in `attic-tests`
+    # See comment in `celler-tests`
     doCheck = false;
 
     cargoExtraArgs = lib.concatStringsSep " " cargoPackageArgs;
@@ -110,12 +110,12 @@ let
     };
   } // extraArgs);
 
-  attic = mkAttic {
+  celler = mkAttic {
     packages = ["attic-client" "attic-server"];
   };
 
   # Client-only package.
-  attic-client = mkAttic {
+  celler-client = mkAttic {
     packages = ["attic-client"];
   };
 
@@ -123,19 +123,19 @@ let
   #
   # Because of Cargo's feature unification, the common `attic` crate always
   # has the `nix_store` feature enabled if the client and server are built
-  # together, leading to `atticd` linking against `libnixstore` as well. This
+  # together, leading to `cellerd` linking against `libnixstore` as well. This
   # package is slimmer with more optimization.
   #
-  # We don't enable fat LTO in the default `attic` package since it
+  # We don't enable fat LTO in the default `celler` package since it
   # dramatically increases build time.
-  attic-server = craneLib.buildPackage ({
-    pname = "attic-server";
+  celler-server = craneLib.buildPackage ({
+    pname = "celler-server";
 
     # We don't pull in the common cargoArtifacts because the feature flags
     # and LTO configs are different
     inherit src version nativeBuildInputs buildInputs;
 
-    # See comment in `attic-tests`
+    # See comment in `celler-tests`
     doCheck = false;
 
     cargoExtraArgs = "-p attic-server";
@@ -152,8 +152,8 @@ let
   # to nix-daemon to import NARs, which is not possible in the build sandbox.
   # In the CI pipeline, we build the test executable inside the sandbox, then
   # run it outside.
-  attic-tests = craneLib.mkCargoDerivation ({
-    pname = "attic-tests";
+  celler-tests = craneLib.mkCargoDerivation ({
+    pname = "celler-tests";
 
     inherit src version buildInputs cargoArtifacts;
 
@@ -176,5 +176,5 @@ let
     '';
   } // extraArgs);
 in {
-  inherit cargoArtifacts attic attic-client attic-server attic-tests;
+  inherit cargoArtifacts celler celler-client celler-server celler-tests;
 }

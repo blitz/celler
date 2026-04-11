@@ -2,7 +2,7 @@ let
   flake = import ./flake-compat.nix;
 in flake.defaultNix.default.overrideAttrs (_: {
   passthru = {
-    attic-client = flake.defaultNix.outputs.packages.${builtins.currentSystem}.attic-client;
+    celler-client = flake.defaultNix.outputs.packages.${builtins.currentSystem}.celler-client;
     demo = flake.defaultNix.outputs.devShells.${builtins.currentSystem}.demo;
   };
 })

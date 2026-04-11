@@ -7,7 +7,7 @@ let
 in
 {
   options = {
-    attic.distributor = mkOption {
+    celler.distributor = mkOption {
       type = types.str;
       default = "dev";
     };
