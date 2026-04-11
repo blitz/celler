@@ -40,9 +40,7 @@ let
   '';
 
   makeBootstrap = system: let
-    package =
-      if system == "x86_64-linux" then self.packages.${system}.celler-client-static
-      else self.packages.${system}.celler-client;
+    package = self.packages.${system}.celler-client;
   in ''
     "${system}" = (mkFakeDerivation {
       name = "${package.name}";

@@ -64,13 +64,11 @@ in
       pkgs,
       config,
       cranePkgs,
-      cranePkgsStatic,
       ...
     }: (lib.mkMerge [
       {
         _module.args = {
           cranePkgs = makeCranePkgs pkgs;
-          cranePkgsStatic = makeCranePkgs pkgs.pkgsStatic;
         };
 
         packages = {
@@ -81,10 +79,6 @@ in
             celler-client
             celler-server
           ;
-
-          celler-static = cranePkgsStatic.celler;
-          celler-client-static = cranePkgsStatic.celler-client;
-          celler-server-static = cranePkgsStatic.celler-server;
 
           celler-ci-installer = pkgs.callPackage ../ci-installer.nix {
             inherit self;
