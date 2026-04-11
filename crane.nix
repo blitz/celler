@@ -98,9 +98,9 @@ let
 
     meta = with lib; {
       description = "Multi-tenant Nix binary cache system";
-      homepage = "https://github.com/zhaofengli/attic";
+      homepage = "https://github.com/blitz/celler";
       license = licenses.asl20;
-      maintainers = with maintainers; [ zhaofengli ];
+      maintainers = with maintainers; [ blitz ];
       platforms = platforms.linux ++ platforms.darwin;
       mainProgram = "celler";
     };

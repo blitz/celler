@@ -3,7 +3,7 @@ set -euo pipefail
 
 if [[ "$#" -lt "2" ]]; then
 	>&2 echo "Usage: $0 <image name> <tag1> ..."
-	>&2 echo "Example: $0 ghcr.io/zhaofengli/attic main abcd123"
+	>&2 echo "Example: $0 ghcr.io/blitz/celler main abcd123"
 	exit 1
 fi
 
@@ -17,7 +17,7 @@ trap cleanup EXIT
 image_name="$1"
 tags=("${@:2}")
 
-manifest_spec="$(mktemp -t attic-manifest-spec.XXXXXXXXXX)"
+manifest_spec="$(mktemp -t celler-manifest-spec.XXXXXXXXXX)"
 
 declare -a digests
 
@@ -46,7 +46,7 @@ push_digest() {
 
 >>"${manifest_spec}" emit_header
 
-nix build .#attic-server-image .#attic-server-image-aarch64 -L --print-out-paths | \
+nix build .#celler-server-image .#celler-server-image-aarch64 -L --print-out-paths | \
 while read -r output; do
 	>>"${manifest_spec}" push_digest "${output}"
 done

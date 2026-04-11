@@ -3,7 +3,7 @@
 Let's spin up Attic in just 15 minutes (yes, it works on macOS too!):
 
 ```bash
-$ nix shell github:zhaofengli/attic
+$ nix shell github:blitz/celler
 ```
 
 Simply run `cellerd` to start the server in monolithic mode with a SQLite database and local storage:

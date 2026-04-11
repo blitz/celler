@@ -1,6 +1,6 @@
 # Deploying to NixOS
 
-Attic provides [a NixOS module](https://github.com/zhaofengli/attic/blob/main/nixos/atticd.nix) that allows you to deploy the Attic Server on a NixOS machine.
+Attic provides [a NixOS module](https://github.com/blitz/celler/blob/main/nixos/cellerd.nix) that allows you to deploy the Attic Server on a NixOS machine.
 
 ## Prerequisites
 
@@ -29,8 +29,8 @@ Ensure the file is only accessible by root.
 
 You can import the module in one of two ways:
 
-- Ad-hoc: Import the `nixos/atticd.nix` from [the repository](https://github.com/zhaofengli/attic).
-- Flakes: Add `github:zhaofengli/attic` as an input, then import `attic.nixosModules.cellerd`.
+- Ad-hoc: Import the `nixos/cellerd.nix` from [the repository](https://github.com/blitz/celler).
+- Flakes: Add `github:blitz/celler` as an input, then import `attic.nixosModules.cellerd`.
 
 ## Configuration
 
