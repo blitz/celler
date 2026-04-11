@@ -72,7 +72,7 @@ let
     installCargoArtifactsMode = "use-zstd";
   } // extraArgs);
 
-  mkAttic = {
+  mkCeller = {
     packages,
   }: let
     cargoPackageArgs = map (p: "-p ${p}") packages;
@@ -110,12 +110,12 @@ let
     };
   } // extraArgs);
 
-  celler = mkAttic {
+  celler = mkCeller {
     packages = ["attic-client" "attic-server"];
   };
 
   # Client-only package.
-  celler-client = mkAttic {
+  celler-client = mkCeller {
     packages = ["attic-client"];
   };
 
