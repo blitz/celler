@@ -119,29 +119,23 @@ let
     packages = ["attic-client"];
   };
 
-  # Server-only package with fat LTO enabled.
+  # Server-only package.
   #
   # Because of Cargo's feature unification, the common `attic` crate always
   # has the `nix_store` feature enabled if the client and server are built
   # together, leading to `cellerd` linking against `libnixstore` as well. This
-  # package is slimmer with more optimization.
-  #
-  # We don't enable fat LTO in the default `celler` package since it
-  # dramatically increases build time.
+  # package is slimmer.
   celler-server = craneLib.buildPackage ({
     pname = "celler-server";
 
     # We don't pull in the common cargoArtifacts because the feature flags
     # and LTO configs are different
-    inherit src version nativeBuildInputs buildInputs;
+    inherit src version nativeBuildInputs buildInputs cargoArtifacts;
 
     # See comment in `celler-tests`
     doCheck = false;
 
     cargoExtraArgs = "-p attic-server";
-
-    CARGO_PROFILE_RELEASE_LTO = "fat";
-    CARGO_PROFILE_RELEASE_CODEGEN_UNITS = "1";
 
     meta = {
       mainProgram = "cellerd";
