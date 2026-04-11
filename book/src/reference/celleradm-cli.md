@@ -1,4 +1,4 @@
-# `atticadm` CLI
+# `celleradm` CLI
 
 The following are the help messages that will be printed when you invoke any sub-command with `--help`:
 

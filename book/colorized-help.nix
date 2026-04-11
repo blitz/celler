@@ -4,7 +4,7 @@ with builtins;
 
 let
   commands = {
-    attic = [
+    celler = [
       null
       "login"
       "use"
@@ -16,10 +16,10 @@ let
       "cache destroy"
       "cache info"
     ];
-    atticd = [
+    cellerd = [
       null
     ];
-    atticadm = [
+    celleradm = [
       null
       "make-token"
     ];

@@ -1,4 +1,4 @@
-# `atticd` CLI
+# `celler` CLI
 
 The following are the help messages that will be printed when you invoke any sub-command with `--help`:
 
@@ -7,5 +7,6 @@ The following are the help messages that will be printed when you invoke any sub
 
     Looking to improve the help messages? They are located in:
 
-    - server/src/cli.rs
+    - client/src/cli.rs
+    - client/src/command/<subcommand>.rs
 -->

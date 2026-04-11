@@ -2,13 +2,13 @@
 
 ## Logging in
 
-You should have received an `attic login` command from an admin like the following:
+You should have received an `celler login` command from an admin like the following:
 
 ```
-attic login central https://attic.domain.tld/ eyJ...
+celler login central https://attic.domain.tld/ eyJ...
 ```
 
-The `attic` client can work with multiple servers at the same time.
+The `celler` client can work with multiple servers at the same time.
 To select the `foo` cache from server `central`, use one of the following:
 
 - `foo`, if the `central` server is configured as the default
@@ -21,7 +21,7 @@ To configure the default server, set `default-server` in `~/.config/attic/config
 To configure Nix to automatically use cache `foo`:
 
 ```
-attic use foo
+celler use foo
 ```
 
 This adds the binary cache to your `~/.config/nix/nix.conf` and configures the credentials required to access it.
@@ -29,7 +29,7 @@ This adds the binary cache to your `~/.config/nix/nix.conf` and configures the c
 If you wish to configure Nix manually, you can view the binary cache endpoint and the cache public key:
 
 ```console
-$ attic cache info foo
+$ celler cache info foo
                Public: true
            Public Key: foo:WcnO6s4aVkB6CKRaPPpKvHLZykWXASV6c+/Ssg8uQEY=
 Binary Cache Endpoint: https://attic.domain.tld/foo
@@ -63,12 +63,12 @@ To configure Nix to no longer use a cache, remove the corresponding entries from
 To push a store path to cache `foo`:
 
 ```bash
-attic push foo /nix/store/...
+celler push foo /nix/store/...
 ```
 
 Other examples include:
 
 ```bash
-attic push foo ./result
-attic push foo /run/current-system
+celler push foo ./result
+celler push foo /run/current-system
 ```

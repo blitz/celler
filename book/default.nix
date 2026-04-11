@@ -28,9 +28,9 @@ in stdenv.mkDerivation {
       fi
     }
 
-    emitColorizedHelp attic
-    emitColorizedHelp atticd
-    emitColorizedHelp atticadm
+    emitColorizedHelp celler
+    emitColorizedHelp cellerd
+    emitColorizedHelp celleradm
 
     mdbook build -d ./build
     cp -r ./build $out

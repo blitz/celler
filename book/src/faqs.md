@@ -29,7 +29,7 @@ Path metadata (store path, references, deriver, etc.) are associated with the lo
 ## How is authentication handled?
 
 Authentication is done via signed JWTs containing the allowed permissions.
-Each instance of `atticd --mode api-server` is stateless.
+Each instance of `cellerd --mode api-server` is stateless.
 This design may be revisited later, with option for a more stateful method of authentication.
 
 ## On what granularity is deduplication done?
@@ -39,7 +39,7 @@ During an upload, the NAR file is split into chunks using the [FastCDC algorithm
 Identical chunks are only stored once in the storage backend.
 If an identical NAR exists in the Global NAR Store, chunking is skipped and the NAR is directly deduplicated.
 
-During a download, `atticd` reassembles the entire NAR from constituent chunks by streaming from the storage backend.
+During a download, `cellerd` reassembles the entire NAR from constituent chunks by streaming from the storage backend.
 
 Data chunking is optional and can be disabled entirely for NARs smaller than a threshold.
 When chunking is disabled, all new NARs are uploaded as a single chunk and NAR-level deduplication is still in effect.
@@ -62,7 +62,7 @@ However, this can be recovered from automatically when any NAR containing the ch
 
 At the moment, Attic cannot automatically detect when a chunk is corrupt or missing.
 Correctly distinguishing between transient and persistent failures is difficult.
-The `atticadm` utility will have the functionality to kill/delete bad chunks.
+The `celleradm` utility will have the functionality to kill/delete bad chunks.
 
 ## How is compression handled?
 

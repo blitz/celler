@@ -81,5 +81,5 @@ It's highly recommended to place it behind a reverse proxy like [NGINX](https://
 
 ## Operations
 
-The NixOS module installs the `atticd-atticadm` wrapper which runs the `atticadm` command as the `atticd` user.
-Use this command to [generate new tokens](../../reference/atticadm-cli.md#atticadm-make-token) to be distributed to users.
+The NixOS module installs the `cellerd-celleradm` wrapper which runs the `celleradm` command as the `cellerd` user.
+Use this command to [generate new tokens](../../reference/celleradm-cli.md#celleradm-make-token) to be distributed to users.
