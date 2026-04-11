@@ -89,7 +89,7 @@ in
         packages = lib.flatten (lib.attrValues cfg.packageSets);
 
         env = {
-          ATTIC_DISTRIBUTOR = toplevel.config.celler.distributor;
+          CELLER_DISTRIBUTOR = toplevel.config.celler.distributor;
 
           RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
 

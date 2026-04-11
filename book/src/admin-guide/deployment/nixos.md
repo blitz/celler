@@ -20,7 +20,7 @@ nix run nixpkgs#openssl -- genrsa -traditional 4096 | base64 -w0
 Create a file on the server containing the following contents:
 
 ```
-ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64="output from above"
+CELLER_SERVER_TOKEN_RS256_SECRET_BASE64="output from above"
 ```
 
 Ensure the file is only accessible by root.

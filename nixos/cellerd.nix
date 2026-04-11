@@ -24,8 +24,8 @@ let
       ''
         cat $configFile
 
-        export ATTIC_SERVER_TOKEN_HS256_SECRET_BASE64="dGVzdCBzZWNyZXQ="
-        export ATTIC_SERVER_DATABASE_URL="sqlite://:memory:"
+        export CELLER_SERVER_TOKEN_HS256_SECRET_BASE64="dGVzdCBzZWNyZXQ="
+        export CELLER_SERVER_DATABASE_URL="sqlite://:memory:"
         ${cfg.package}/bin/cellerd --mode check-config -f $configFile
         cat <$configFile >$out
       '';
@@ -88,7 +88,7 @@ in
           Path to an EnvironmentFile containing required environment
           variables:
 
-          - ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64: The base64-encoded RSA PEM PKCS1 of the
+          - CELLER_SERVER_TOKEN_RS256_SECRET_BASE64: The base64-encoded RSA PEM PKCS1 of the
             RS256 JWT secret. Generate it with `openssl genrsa -traditional 4096 | base64 -w0`.
         '';
         type = types.nullOr types.path;

@@ -29,10 +29,10 @@ jobs:
       - name: Configure Attic
         run: |
           export PATH=$HOME/.nix-profile/bin:$PATH # FIXME
-          attic login staging https://staging.attic.rs/ "$ATTIC_TOKEN"
+          attic login staging https://staging.attic.rs/ "$CELLER_TOKEN"
           attic use attic-ci
         env:
-          ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+          CELLER_TOKEN: ${{ secrets.CELLER_TOKEN }}
 
       - name: Build book
         run: nix build .#book -L
@@ -53,9 +53,9 @@ jobs:
       - name: Push build artifacts
         run: |
           export PATH=$HOME/.nix-profile/bin:$PATH # FIXME
-          if [ -n "$ATTIC_TOKEN" ]; then
+          if [ -n "$CELLER_TOKEN" ]; then
             nix build .#book --no-link --print-out-paths -L | \
               xargs attic push attic-ci
           fi
         env:
-          ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+          CELLER_TOKEN: ${{ secrets.CELLER_TOKEN }}

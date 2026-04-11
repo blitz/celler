@@ -19,7 +19,7 @@ mod nix_store {
             .expect("Failed to get version of nix-main");
         let version = Version::from(&nix_main.version).unwrap();
 
-        build.define("ATTIC_VARIANT_NIX", None);
+        build.define("CELLER_VARIANT_NIX", None);
 
         let (major, minor) = match (version.part(0), version.part(1)) {
             (Ok(Part::Number(major)), Ok(Part::Number(minor))) if minor < 100 => (major, minor),

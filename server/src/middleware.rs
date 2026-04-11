@@ -11,7 +11,7 @@ use axum::{
 
 use super::{AuthState, RequestState, RequestStateInner, State};
 use crate::error::{ErrorKind, ServerResult};
-use attic::api::binary_cache::ATTIC_CACHE_VISIBILITY;
+use attic::api::binary_cache::CELLER_CACHE_VISIBILITY;
 
 /// Initializes per-request state.
 pub async fn init_request_state(
@@ -60,7 +60,7 @@ pub async fn restrict_host(
     Ok(next.run(req).await)
 }
 
-/// Sets the `X-Attic-Cache-Visibility` header in responses.
+/// Sets the `X-Celler-Cache-Visibility` header in responses.
 pub(crate) async fn set_visibility_header(
     Extension(req_state): Extension<RequestState>,
     req: Request,
@@ -71,7 +71,7 @@ pub(crate) async fn set_visibility_header(
     if req_state.public_cache.load(Ordering::Relaxed) {
         response
             .headers_mut()
-            .append(ATTIC_CACHE_VISIBILITY, HeaderValue::from_static("public"));
+            .append(CELLER_CACHE_VISIBILITY, HeaderValue::from_static("public"));
     }
 
     Ok(response)

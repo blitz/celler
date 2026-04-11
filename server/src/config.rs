@@ -28,22 +28,22 @@ const XDG_PREFIX: &str = "attic";
 /// Environment variable storing the Base64-encoded TOML configuration.
 ///
 /// This is useful for deploying to certain application platforms like Fly.io
-const ENV_CONFIG_BASE64: &str = "ATTIC_SERVER_CONFIG_BASE64";
+const ENV_CONFIG_BASE64: &str = "CELLER_SERVER_CONFIG_BASE64";
 
 /// Environment variable storing the base64-encoded HMAC secret (used for signing and verifying
 /// received JWTs).
-const ENV_TOKEN_HS256_SECRET_BASE64: &str = "ATTIC_SERVER_TOKEN_HS256_SECRET_BASE64";
+const ENV_TOKEN_HS256_SECRET_BASE64: &str = "CELLER_SERVER_TOKEN_HS256_SECRET_BASE64";
 
 /// Environment variable storing the base64-encoded RSA PEM PKCS1 private key (used for signing and
 /// verifying received JWTs).
-const ENV_TOKEN_RS256_SECRET_BASE64: &str = "ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64";
+const ENV_TOKEN_RS256_SECRET_BASE64: &str = "CELLER_SERVER_TOKEN_RS256_SECRET_BASE64";
 
 /// Environment variable storing the base64-encoded RSA PEM PKCS1 public key (used for verifying
 /// received JWTs only).
-const ENV_TOKEN_RS256_PUBKEY_BASE64: &str = "ATTIC_SERVER_TOKEN_RS256_PUBKEY_BASE64";
+const ENV_TOKEN_RS256_PUBKEY_BASE64: &str = "CELLER_SERVER_TOKEN_RS256_PUBKEY_BASE64";
 
 /// Environment variable storing the database connection string.
-const ENV_DATABASE_URL: &str = "ATTIC_SERVER_DATABASE_URL";
+const ENV_DATABASE_URL: &str = "CELLER_SERVER_DATABASE_URL";
 
 /// Configuration for the Attic Server.
 #[derive(Clone, Deserialize, derive_more::Debug)]

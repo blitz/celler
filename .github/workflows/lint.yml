@@ -28,16 +28,16 @@ jobs:
 
       - name: Configure Attic
         run: |
-          : "${ATTIC_SERVER:=https://staging.attic.rs/}"
-          : "${ATTIC_CACHE:=attic-ci}"
-          echo ATTIC_CACHE=$ATTIC_CACHE >>$GITHUB_ENV
+          : "${CELLER_SERVER:=https://staging.attic.rs/}"
+          : "${CELLER_CACHE:=attic-ci}"
+          echo CELLER_CACHE=$CELLER_CACHE >>$GITHUB_ENV
           export PATH=$HOME/.nix-profile/bin:$PATH # FIXME
-          attic login --set-default ci "$ATTIC_SERVER" "$ATTIC_TOKEN"
-          attic use "$ATTIC_CACHE"
+          attic login --set-default ci "$CELLER_SERVER" "$CELLER_TOKEN"
+          attic use "$CELLER_CACHE"
         env:
-          ATTIC_SERVER: ${{ secrets.ATTIC_SERVER }}
-          ATTIC_CACHE: ${{ secrets.ATTIC_CACHE }}
-          ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+          CELLER_SERVER: ${{ secrets.CELLER_SERVER }}
+          CELLER_CACHE: ${{ secrets.CELLER_CACHE }}
+          CELLER_TOKEN: ${{ secrets.CELLER_TOKEN }}
 
       - name: Cache dev shell
         run: |

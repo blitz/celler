@@ -16,18 +16,18 @@ use reqwest::{
 use serde::Deserialize;
 
 use crate::config::ServerConfig;
-use crate::version::ATTIC_DISTRIBUTOR;
+use crate::version::CELLER_DISTRIBUTOR;
 use attic::api::v1::cache_config::{CacheConfig, CreateCacheRequest};
 use attic::api::v1::get_missing_paths::{GetMissingPathsRequest, GetMissingPathsResponse};
 use attic::api::v1::upload_path::{
-    UploadPathNarInfo, UploadPathResult, ATTIC_NAR_INFO, ATTIC_NAR_INFO_PREAMBLE_SIZE,
+    UploadPathNarInfo, UploadPathResult, CELLER_NAR_INFO, CELLER_NAR_INFO_PREAMBLE_SIZE,
 };
 use attic::cache::CacheName;
 use attic::nix_store::StorePathHash;
 
 /// The User-Agent string of Attic.
-const ATTIC_USER_AGENT: &str =
-    formatcp!("Attic/{} ({})", env!("CARGO_PKG_NAME"), ATTIC_DISTRIBUTOR);
+const CELLER_USER_AGENT: &str =
+    formatcp!("Attic/{} ({})", env!("CARGO_PKG_NAME"), CELLER_DISTRIBUTOR);
 
 /// The size threshold to send the upload info as part of the PUT body.
 const NAR_INFO_PREAMBLE_THRESHOLD: usize = 4 * 1024; // 4 KiB
@@ -185,7 +185,7 @@ impl ApiClient {
         let mut req = self
             .client
             .put(endpoint)
-            .header(USER_AGENT, HeaderValue::from_str(ATTIC_USER_AGENT)?);
+            .header(USER_AGENT, HeaderValue::from_str(CELLER_USER_AGENT)?);
 
         if force_preamble || upload_info_json.len() >= NAR_INFO_PREAMBLE_THRESHOLD {
             let preamble = Bytes::from(upload_info_json);
@@ -194,11 +194,11 @@ impl ApiClient {
 
             let chained = preamble_stream.chain(stream.into_stream());
             req = req
-                .header(ATTIC_NAR_INFO_PREAMBLE_SIZE, preamble_len)
+                .header(CELLER_NAR_INFO_PREAMBLE_SIZE, preamble_len)
                 .body(Body::wrap_stream(chained));
         } else {
             req = req
-                .header(ATTIC_NAR_INFO, HeaderValue::from_str(&upload_info_json)?)
+                .header(CELLER_NAR_INFO, HeaderValue::from_str(&upload_info_json)?)
                 .body(Body::wrap_stream(stream));
         }
 

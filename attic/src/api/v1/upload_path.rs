@@ -6,18 +6,18 @@ use crate::hash::Hash;
 use crate::nix_store::StorePathHash;
 
 /// Header containing the upload info.
-pub const ATTIC_NAR_INFO: &str = "X-Attic-Nar-Info";
+pub const CELLER_NAR_INFO: &str = "X-Celler-Nar-Info";
 
 /// Header containing the size of the upload info at the beginning of the body.
-pub const ATTIC_NAR_INFO_PREAMBLE_SIZE: &str = "X-Attic-Nar-Info-Preamble-Size";
+pub const CELLER_NAR_INFO_PREAMBLE_SIZE: &str = "X-Celler-Nar-Info-Preamble-Size";
 
 /// NAR information associated with a upload.
 ///
 /// There are two ways for the client to supply the NAR information:
 ///
-/// 1. At the beginning of the PUT body. The `X-Attic-Nar-Info-Preamble-Size`
+/// 1. At the beginning of the PUT body. The `X-Celler-Nar-Info-Preamble-Size`
 ///    header must be set to the size of the JSON.
-/// 2. Through the `X-Attic-Nar-Info` header.
+/// 2. Through the `X-Celler-Nar-Info` header.
 ///
 /// The client is advised to use the first method if the serialized
 /// JSON is large (>4K).

@@ -1,4 +1,4 @@
-#if defined(ATTIC_VARIANT_NIX)
+#if defined(CELLER_VARIANT_NIX)
 	#if NIX_VERSION >= 231
 		#include <nix/store/globals.hh>
 		#include <nix/store/store-open.hh>

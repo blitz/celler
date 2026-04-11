@@ -80,7 +80,7 @@ let
     pname = "celler";
     inherit src version nativeBuildInputs buildInputs cargoArtifacts;
 
-    ATTIC_DISTRIBUTOR = "attic";
+    CELLER_DISTRIBUTOR = "celler";
 
     # See comment in `celler-tests`
     doCheck = false;

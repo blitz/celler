@@ -89,7 +89,7 @@ struct RequestStateInner {
 
     /// Whether the cache the client's interacting with is public.
     ///
-    /// This is purely informational and used to add the `X-Attic-Cache-Visibility`.
+    /// This is purely informational and used to add the `X-Celler-Cache-Visibility`.
     /// header in responses.
     public_cache: AtomicBool,
 }

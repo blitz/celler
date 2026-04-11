@@ -34,8 +34,8 @@ use crate::error::{ErrorKind, ServerError, ServerResult};
 use crate::narinfo::Compression;
 use crate::{RequestState, State};
 use attic::api::v1::upload_path::{
-    UploadPathNarInfo, UploadPathResult, UploadPathResultKind, ATTIC_NAR_INFO,
-    ATTIC_NAR_INFO_PREAMBLE_SIZE,
+    UploadPathNarInfo, UploadPathResult, UploadPathResultKind, CELLER_NAR_INFO,
+    CELLER_NAR_INFO_PREAMBLE_SIZE,
 };
 use attic::chunking::chunk_stream;
 use attic::hash::Hash;
@@ -95,21 +95,21 @@ pub(crate) async fn upload_path(
     );
 
     let upload_info: UploadPathNarInfo = {
-        if let Some(preamble_size_bytes) = headers.get(ATTIC_NAR_INFO_PREAMBLE_SIZE) {
+        if let Some(preamble_size_bytes) = headers.get(CELLER_NAR_INFO_PREAMBLE_SIZE) {
             // Read from the beginning of the PUT body
             let preamble_size: usize = preamble_size_bytes
                 .to_str()
                 .map_err(|_| {
                     ErrorKind::RequestError(anyhow!(
                         "{} has invalid encoding",
-                        ATTIC_NAR_INFO_PREAMBLE_SIZE
+                        CELLER_NAR_INFO_PREAMBLE_SIZE
                     ))
                 })?
                 .parse()
                 .map_err(|_| {
                     ErrorKind::RequestError(anyhow!(
                         "{} must be a valid unsigned integer",
-                        ATTIC_NAR_INFO_PREAMBLE_SIZE
+                        CELLER_NAR_INFO_PREAMBLE_SIZE
                     ))
                 })?;
 
@@ -130,11 +130,11 @@ pub(crate) async fn upload_path(
             }
 
             serde_json::from_slice(&preamble).map_err(ServerError::request_error)?
-        } else if let Some(nar_info_bytes) = headers.get(ATTIC_NAR_INFO) {
-            // Read from X-Attic-Nar-Info header
+        } else if let Some(nar_info_bytes) = headers.get(CELLER_NAR_INFO) {
+            // Read from X-Celler-Nar-Info header
             serde_json::from_slice(nar_info_bytes.as_bytes()).map_err(ServerError::request_error)?
         } else {
-            return Err(ErrorKind::RequestError(anyhow!("{} must be set", ATTIC_NAR_INFO)).into());
+            return Err(ErrorKind::RequestError(anyhow!("{} must be set", CELLER_NAR_INFO)).into());
         }
     };
     let cache_name = &upload_info.cache;
