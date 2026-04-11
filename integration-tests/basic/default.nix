@@ -5,8 +5,8 @@ let
   serverConfigFile = config.nodes.server.services.atticd.configFile;
 
   cmd = {
-    atticadm = ". /etc/atticd.env && export ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64 && atticd-atticadm";
-    atticd = ". /etc/atticd.env && export ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64 && atticd -f ${serverConfigFile}";
+    celleradm = ". /etc/atticd.env && export ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64 && cellerd-celleradm";
+    cellerd = ". /etc/atticd.env && export ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64 && cellerd -f ${serverConfigFile}";
   };
 
   makeTestDerivation = pkgs.writeShellScript "make-drv" ''
@@ -185,36 +185,36 @@ in {
       server.wait_for_unit('atticd.service')
       client.wait_until_succeeds("curl -sL http://server:8080", timeout=40)
 
-      root_token = server.succeed("${cmd.atticadm} make-token --sub 'e2e-root' --validity '1 month' --push '*' --pull '*' --delete '*' --create-cache '*' --destroy-cache '*' --configure-cache '*' --configure-cache-retention '*' </dev/null").strip()
-      readonly_token = server.succeed("${cmd.atticadm} make-token --sub 'e2e-root' --validity '1 month' --pull 'test' </dev/null").strip()
+      root_token = server.succeed("${cmd.celleradm} make-token --sub 'e2e-root' --validity '1 month' --push '*' --pull '*' --delete '*' --create-cache '*' --destroy-cache '*' --configure-cache '*' --configure-cache-retention '*' </dev/null").strip()
+      readonly_token = server.succeed("${cmd.celleradm} make-token --sub 'e2e-root' --validity '1 month' --pull 'test' </dev/null").strip()
 
-      client.succeed(f"attic login --set-default root http://server:8080 {root_token}")
-      client.succeed(f"attic login readonly http://server:8080 {readonly_token}")
-      client.succeed("attic login anon http://server:8080")
+      client.succeed(f"celler login --set-default root http://server:8080 {root_token}")
+      client.succeed(f"celler login readonly http://server:8080 {readonly_token}")
+      client.succeed("celler login anon http://server:8080")
 
       # TODO: Make sure the correct status codes are returned
       # (i.e., 500s shouldn't pass the "should fail" tests)
 
       with subtest("Check that we can create a cache"):
-          client.succeed("attic cache create test")
+          client.succeed("celler cache create test")
 
       with subtest("Check that we can push a path"):
           client.succeed("${makeTestDerivation} test.nix")
           test_file = client.succeed("nix-build --no-out-link test.nix").strip()
           test_file_hash = test_file.removeprefix("/nix/store/")[:32]
 
-          client.succeed(f"attic push test {test_file}")
+          client.succeed(f"celler push test {test_file}")
           client.succeed(f"nix-store --delete {test_file}")
           client.fail(f"ls {test_file}")
 
       with subtest("Check that we can pull a path"):
-          client.succeed("attic use readonly:test")
+          client.succeed("celler use readonly:test")
           client.succeed(f"nix-store -r {test_file}")
           client.succeed(f"grep hello {test_file}")
 
       with subtest("Check that we cannot push without required permissions"):
-          client.fail(f"attic push readonly:test {test_file}")
-          client.fail(f"attic push anon:test {test_file} 2>&1")
+          client.fail(f"celler push readonly:test {test_file}")
+          client.fail(f"celler push anon:test {test_file} 2>&1")
 
       with subtest("Check that we can push a list of paths from stdin"):
           paths = []
@@ -224,7 +224,7 @@ in {
               client.succeed(f"echo {path} >>paths.txt")
               paths.append(path)
 
-          client.succeed("attic push test --stdin <paths.txt 2>&1")
+          client.succeed("celler push test --stdin <paths.txt 2>&1")
 
           for path in paths:
               client.succeed(f"nix-store --delete {path}")
@@ -238,16 +238,16 @@ in {
       with subtest("Check that we can make the cache public"):
           client.fail("curl -sL --fail-with-body http://server:8080/test/nix-cache-info")
           client.fail(f"curl -sL --fail-with-body http://server:8080/test/{test_file_hash}.narinfo")
-          client.succeed("attic cache configure test --public")
+          client.succeed("celler cache configure test --public")
           client.succeed("curl -sL --fail-with-body http://server:8080/test/nix-cache-info")
           client.succeed(f"curl -sL --fail-with-body http://server:8080/test/{test_file_hash}.narinfo")
 
       with subtest("Check that we can trigger garbage collection"):
           test_file_hash = test_file.removeprefix("/nix/store/")[:32]
           client.succeed(f"curl -sL --fail-with-body http://server:8080/test/{test_file_hash}.narinfo")
-          client.succeed("attic cache configure test --retention-period 1s")
+          client.succeed("celler cache configure test --retention-period 1s")
           time.sleep(2)
-          server.succeed("${cmd.atticd} --mode garbage-collector-once")
+          server.succeed("${cmd.cellerd} --mode garbage-collector-once")
           client.fail(f"curl -sL --fail-with-body http://server:8080/test/{test_file_hash}.narinfo")
 
       ${lib.optionalString (config.storage == "local") ''
@@ -260,14 +260,14 @@ in {
       with subtest("Check that we can include the upload info in the payload"):
           client.succeed("${makeTestDerivation} test2.nix")
           test2_file = client.succeed("nix-build --no-out-link test2.nix")
-          client.succeed(f"attic push --force-preamble test {test2_file}")
+          client.succeed(f"celler push --force-preamble test {test2_file}")
           client.succeed(f"nix-store --delete {test2_file}")
           client.succeed(f"nix-store -r {test2_file}")
 
       with subtest("Check that we can destroy the cache"):
-          client.succeed("attic cache info test")
-          client.succeed("attic cache destroy --no-confirm test")
-          client.fail("attic cache info test")
+          client.succeed("celler cache info test")
+          client.succeed("celler cache destroy --no-confirm test")
+          client.fail("celler cache info test")
           client.fail("curl -sL --fail-with-body http://server:8080/test/nix-cache-info")
 
       ${databaseModules.${config.database}.testScriptPost or ""}

@@ -88,11 +88,11 @@ let
     cargoExtraArgs = lib.concatStringsSep " " cargoPackageArgs;
 
     postInstall = lib.optionalString (stdenv.hostPlatform == stdenv.buildPlatform) ''
-      if [[ -f $out/bin/attic ]]; then
-        installShellCompletion --cmd attic \
-          --bash <($out/bin/attic gen-completions bash) \
-          --zsh <($out/bin/attic gen-completions zsh) \
-          --fish <($out/bin/attic gen-completions fish)
+      if [[ -f $out/bin/celler ]]; then
+        installShellCompletion --cmd celler \
+          --bash <($out/bin/celler gen-completions bash) \
+          --zsh <($out/bin/celler gen-completions zsh) \
+          --fish <($out/bin/celler gen-completions fish)
       fi
     '';
 
@@ -102,7 +102,7 @@ let
       license = licenses.asl20;
       maintainers = with maintainers; [ zhaofengli ];
       platforms = platforms.linux ++ platforms.darwin;
-      mainProgram = "attic";
+      mainProgram = "celler";
     };
 
     passthru = {
@@ -144,7 +144,7 @@ let
     CARGO_PROFILE_RELEASE_CODEGEN_UNITS = "1";
 
     meta = {
-      mainProgram = "atticd";
+      mainProgram = "cellerd";
     };
   } // extraArgs);
 

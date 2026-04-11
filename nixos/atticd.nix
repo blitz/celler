@@ -26,11 +26,11 @@ let
 
         export ATTIC_SERVER_TOKEN_HS256_SECRET_BASE64="dGVzdCBzZWNyZXQ="
         export ATTIC_SERVER_DATABASE_URL="sqlite://:memory:"
-        ${cfg.package}/bin/atticd --mode check-config -f $configFile
+        ${cfg.package}/bin/cellerd --mode check-config -f $configFile
         cat <$configFile >$out
       '';
 
-  atticadmShim = pkgs.writeShellScript "atticadm" ''
+  celleradmShim = pkgs.writeShellScript "celleradm" ''
     if [ -n "$ATTICADM_PWD" ]; then
       cd "$ATTICADM_PWD"
       if [ "$?" != "0" ]; then
@@ -38,10 +38,10 @@ let
       fi
     fi
 
-    exec ${cfg.package}/bin/atticadm -f ${checkedConfigFile} "$@"
+    exec ${cfg.package}/bin/celleradm -f ${checkedConfigFile} "$@"
   '';
 
-  atticadmWrapper = pkgs.writeShellScriptBin "atticd-atticadm" ''
+  celleradmWrapper = pkgs.writeShellScriptBin "cellerd-celleradm" ''
     exec systemd-run \
       --quiet \
       --pipe \
@@ -55,7 +55,7 @@ let
       --property=Environment=ATTICADM_PWD=$(pwd) \
       --working-directory / \
       -- \
-      ${atticadmShim} "$@"
+      ${celleradmShim} "$@"
   '';
 
   hasLocalPostgresDB =
@@ -206,7 +206,7 @@ in
       wants = [ "network-online.target" ];
 
       serviceConfig = {
-        ExecStart = "${cfg.package}/bin/atticd -f ${checkedConfigFile} --mode ${cfg.mode}";
+        ExecStart = "${cfg.package}/bin/cellerd -f ${checkedConfigFile} --mode ${cfg.mode}";
         EnvironmentFile = cfg.environmentFile;
         StateDirectory = "atticd"; # for usage with local storage and sqlite
         DynamicUser = true;
@@ -260,7 +260,7 @@ in
     };
 
     environment.systemPackages = [
-      atticadmWrapper
+      celleradmWrapper
     ];
 
     nixpkgs.overlays = lib.mkIf cfg.useFlakeCompatOverlay [
