@@ -1,0 +1,38 @@
+name: Deploy Book
+
+on:
+  push:
+    branches:
+      - 'main'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy-unstable:
+    name: Deploy
+
+    runs-on: ubuntu-latest
+    if: github.repository == 'blitz/celler'
+
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - uses: samueldr/lix-gha-installer-action@7b7f14d320d6aacfb65bd1ef761566b3b69e474c # v2026-02-22
+
+      - name: Build book
+        run: nix build .#book -L
+
+      - name: Copy book artifact
+        run: |
+          cp --recursive --dereference --no-preserve=mode,ownership result public
+
+      - name: Upload book artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: public
+
+      - name: Deploy book
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
