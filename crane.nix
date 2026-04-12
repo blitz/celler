@@ -62,14 +62,6 @@ let
   cargoArtifacts = craneLib.buildDepsOnly ({
     pname = "celler";
     inherit src version nativeBuildInputs buildInputs;
-
-    # By default it's "use-symlink", which causes Crane's `inheritCargoArtifactsHook`
-    # to copy the artifacts using `cp --no-preserve=mode` which breaks the executable
-    # bit of bindgen's build-script binary.
-    #
-    # With `use-zstd`, the cargo artifacts are archived in a `tar.zstd`. This is
-    # actually set if you use `buildPackage` without passing `cargoArtifacts`.
-    installCargoArtifactsMode = "use-zstd";
   } // extraArgs);
 
   mkCeller = {
