@@ -19,6 +19,7 @@ nix-base32 = "0.2.0"
 pin-project = "1.1.10"
 regex = "1.11.1"
 serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.149"
 serde_with = "3.14.0"
 sha2 = "0.10.9"
 tempfile = "3"
