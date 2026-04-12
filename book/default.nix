@@ -1,17 +1,17 @@
 { lib, stdenv, nix-gitignore, mdbook, mdbook-linkcheck, python3, callPackage, writeScript
-, attic ? null
+, celler ? null
 }:
 
 let
   colorizedHelp = let
     help = callPackage ./colorized-help.nix {
-      inherit attic;
+      inherit celler;
     };
-  in if attic != null then help else null;
+  in if celler != null then help else null;
 in stdenv.mkDerivation {
   inherit colorizedHelp;
 
-  name = "attic-book";
+  name = "celler-book";
 
   src = nix-gitignore.gitignoreSource [] ./.;
 
@@ -24,7 +24,7 @@ in stdenv.mkDerivation {
       if [[ -n "$colorizedHelp" ]]; then
           cat "$colorizedHelp/$command.md" >> src/reference/$command-cli.md
       else
-          echo "Error: No attic executable passed to the builder" >> src/reference/$command-cli.md
+          echo "Error: No celler executable passed to the builder" >> src/reference/$command-cli.md
       fi
     }
 

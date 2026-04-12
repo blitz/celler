@@ -1,4 +1,4 @@
-{ pkgs, lib, config, flake, attic, ... }:
+{ pkgs, lib, config, flake, celler, ... }:
 let
   inherit (lib) types;
 
@@ -104,7 +104,7 @@ let
             type = "s3";
             endpoint = "http://server:9000";
             region = "us-east-1";
-            bucket = "attic";
+            bucket = "celler";
             credentials = {
               access_key_id = accessKey;
               secret_access_key = secretKey;
@@ -113,8 +113,8 @@ let
         };
       };
       testScript = ''
-        server.succeed("mkdir /var/lib/minio/data/attic")
-        server.succeed("chown minio: /var/lib/minio/data/attic")
+        server.succeed("mkdir /var/lib/minio/data/celler")
+        server.succeed("chown minio: /var/lib/minio/data/celler")
         client.wait_until_succeeds("curl http://server:9000", timeout=20)
       '';
     };

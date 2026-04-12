@@ -1,5 +1,5 @@
-# Generates a script to bootstrap the Attic client with a substituter for
-# CI usage. Will be simplier when Attic is in cache.nixos.org.
+# Generates a script to bootstrap the Celler client with a substituter for
+# CI usage. Will be simplier when Celler is in cache.nixos.org.
 
 { self
 , writeText
@@ -61,7 +61,7 @@ let
     }.''${system}
   '';
 
-  bootstrapScript = writeScript "install-attic-ci.sh" ''
+  bootstrapScript = writeScript "install-celler-ci.sh" ''
     #!/usr/bin/env bash
     set -euo pipefail
     expr=$(mktemp)

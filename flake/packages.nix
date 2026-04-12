@@ -85,7 +85,7 @@ in
           };
 
           book = pkgs.callPackage ../book {
-            attic = self'.packages.celler;
+            celler = self'.packages.celler;
           };
         };
       }

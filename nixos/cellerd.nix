@@ -173,7 +173,7 @@ in
 
           Run `openssl genrsa -traditional -out private_key.pem 4096 | base64 -w0` and create a file with the following contents:
 
-          ATTIC_SERVER_TOKEN_RS256_SECRET="output from command"
+          CELLER_SERVER_TOKEN_RS256_SECRET_BASE64="output from command"
 
           Then, set `services.cellerd.environmentFile` to the quoted absolute path of the file.
         '';

@@ -1,5 +1,5 @@
 # For distribution from this repository as well as CI, we use Crane to build
-# Attic.
+# Celler.
 
 { stdenv
 , lib
@@ -142,7 +142,7 @@ let
     };
   } // extraArgs);
 
-  # Attic interacts with Nix directly and its tests require trusted-user access
+  # Celler interacts with Nix directly and its tests require trusted-user access
   # to nix-daemon to import NARs, which is not possible in the build sandbox.
   # In the CI pipeline, we build the test executable inside the sandbox, then
   # run it outside.
