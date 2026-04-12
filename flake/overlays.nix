@@ -6,8 +6,6 @@
     in {
       inherit (cranePkgs)
         celler
-        celler-client
-        celler-server
         ;
     };
   };

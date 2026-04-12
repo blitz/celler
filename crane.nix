@@ -114,34 +114,6 @@ let
     packages = ["attic-client" "attic-server"];
   };
 
-  # Client-only package.
-  celler-client = mkCeller {
-    packages = ["attic-client"];
-  };
-
-  # Server-only package.
-  #
-  # Because of Cargo's feature unification, the common `attic` crate always
-  # has the `nix_store` feature enabled if the client and server are built
-  # together, leading to `cellerd` linking against `libnixstore` as well. This
-  # package is slimmer.
-  celler-server = craneLib.buildPackage ({
-    pname = "celler-server";
-
-    # We don't pull in the common cargoArtifacts because the feature flags
-    # and LTO configs are different
-    inherit src version nativeBuildInputs buildInputs cargoArtifacts;
-
-    # See comment in `celler-tests`
-    doCheck = false;
-
-    cargoExtraArgs = "-p attic-server";
-
-    meta = {
-      mainProgram = "cellerd";
-    };
-  } // extraArgs);
-
   # Celler interacts with Nix directly and its tests require trusted-user access
   # to nix-daemon to import NARs, which is not possible in the build sandbox.
   # In the CI pipeline, we build the test executable inside the sandbox, then
@@ -170,5 +142,5 @@ let
     '';
   } // extraArgs);
 in {
-  inherit cargoArtifacts celler celler-client celler-server celler-tests;
+  inherit cargoArtifacts celler celler-tests;
 }

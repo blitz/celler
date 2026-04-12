@@ -76,8 +76,6 @@ in
 
           inherit (cranePkgs)
             celler
-            celler-client
-            celler-server
           ;
 
           book = pkgs.callPackage ../book {
@@ -92,7 +90,7 @@ in
             name = "celler-server";
             tag = "main";
             copyToRoot = [
-              self'.packages.celler-server
+              self'.packages.celler
 
               # Debugging utilities for `fly ssh console`
               pkgs.busybox

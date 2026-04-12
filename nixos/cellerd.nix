@@ -81,7 +81,7 @@ in
     services.cellerd = {
       enable = lib.mkEnableOption "the cellerd, the Nix Binary Cache server";
 
-      package = lib.mkPackageOption pkgs "celler-server" { };
+      package = lib.mkPackageOption pkgs "celler" { };
 
       environmentFile = lib.mkOption {
         description = ''

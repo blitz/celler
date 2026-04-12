@@ -164,7 +164,7 @@ in {
           };
         };
 
-        environment.systemPackages = [ pkgs.openssl pkgs.celler-server ];
+        environment.systemPackages = [ pkgs.openssl pkgs.celler ];
 
         networking.firewall.allowedTCPPorts = [ 8080 ];
       };
