@@ -74,10 +74,6 @@ in
           linuxPackages.perf
         ];
 
-        wasm = [
-          llvmPackages_latest.bintools
-          worker-build wasm-pack wasm-bindgen-cli
-        ];
       };
 
       devShells.default = pkgs.mkShell (lib.recursiveUpdate {

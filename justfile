@@ -18,21 +18,6 @@ with-nix version *command:
 		CARGO_TARGET_DIR="{{ base }}/target/nix-{{ version }}" \
 		{{ command }}
 
-# (CI) Build WebAssembly crates
-ci-build-wasm:
-	#!/usr/bin/env bash
-	set -euxo pipefail
-
-	# https://github.com/rust-lang/rust/issues/122357
-	export RUST_MIN_STACK=16777216
-
-	pushd attic
-	cargo build --target wasm32-unknown-unknown --no-default-features -F chunking -F io
-	popd
-	pushd token
-	cargo build --target wasm32-unknown-unknown
-	popd
-
 # (CI) Run unit tests
 ci-unit-tests matrix:
 	#!/usr/bin/env bash
