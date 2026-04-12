@@ -80,10 +80,6 @@ in
             celler-server
           ;
 
-          celler-ci-installer = pkgs.callPackage ../ci-installer.nix {
-            inherit self;
-          };
-
           book = pkgs.callPackage ../book {
             celler = self'.packages.celler;
           };

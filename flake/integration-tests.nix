@@ -1,4 +1,4 @@
-{ lib, flake-parts-lib, inputs, self, ... }:
+{ lib, flake-parts-lib, self, inputs, ... }:
 let
   inherit (lib)
     mkOption
@@ -29,12 +29,6 @@ in
   };
 
   config = {
-    flake.githubActions = inputs.nix-github-actions.lib.mkGithubMatrix {
-      checks = {
-        inherit (self.checks) x86_64-linux;
-      };
-    };
-
     perSystem = { self', pkgs, config, system, ... }: let
       cfg = config.celler.integration-tests;
 
