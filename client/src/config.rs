@@ -1,8 +1,8 @@
 //! Client configurations.
 //!
-//! Configuration files are stored under `$XDG_CONFIG_HOME/attic/config.toml`.
+//! Configuration files are stored under `$XDG_CONFIG_HOME/celler/config.toml`.
 //! We automatically write modified configurations back for a good end-user
-//! experience (e.g., `attic login`).
+//! experience (e.g., `celler login`).
 
 use std::collections::HashMap;
 use std::fs::{self, read_to_string, OpenOptions, Permissions};
@@ -19,8 +19,8 @@ use crate::cache::{CacheName, CacheRef, ServerName};
 
 /// Application prefix in XDG base directories.
 ///
-/// This will be concatenated into `$XDG_CONFIG_HOME/attic`.
-const XDG_PREFIX: &str = "attic";
+/// This will be concatenated into `$XDG_CONFIG_HOME/celler`.
+const XDG_PREFIX: &str = "celler";
 
 /// The permission the configuration file should have.
 const FILE_MODE: u32 = 0o600;

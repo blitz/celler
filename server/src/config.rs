@@ -22,8 +22,8 @@ use crate::storage::{LocalStorageConfig, S3StorageConfig};
 
 /// Application prefix in XDG base directories.
 ///
-/// This will be concatenated into `$XDG_CONFIG_HOME/attic`.
-const XDG_PREFIX: &str = "attic";
+/// This will be concatenated into `$XDG_CONFIG_HOME/celler`.
+const XDG_PREFIX: &str = "celler";
 
 /// Environment variable storing the Base64-encoded TOML configuration.
 ///

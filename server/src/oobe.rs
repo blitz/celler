@@ -1,15 +1,15 @@
 //! Guided out-of-box experience.
 //!
-//! This performs automatic setup for people running `atticd`
+//! This performs automatic setup for people running `cellerd`
 //! directly without specifying any configurations. The goal is
-//! to let them quickly have a taste of Attic with a config
+//! to let them quickly have a taste of Celler with a config
 //! template that provide guidance for them to achieve a more
 //! permanent setup.
 //!
 //! Paths:
-//! - Config: `~/.config/attic/server.yaml`
-//! - SQLite: `~/.local/share/attic/server.db`
-//! - NARs: `~/.local/share/attic/storage`
+//! - Config: `~/.config/celler/server.toml`
+//! - SQLite: `~/.local/share/celler/server.db`
+//! - NARs: `~/.local/share/celler/storage`
 
 use anyhow::Result;
 use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine};
@@ -79,7 +79,7 @@ pub async fn run_oobe() -> Result<()> {
 
     eprintln!();
     eprintln!("-----------------");
-    eprintln!("Welcome to Attic!");
+    eprintln!("Welcome to Celler!");
     eprintln!();
     eprintln!("A simple setup using SQLite and local storage has been configured for you in:");
     eprintln!();
@@ -87,7 +87,7 @@ pub async fn run_oobe() -> Result<()> {
     eprintln!();
     eprintln!("Run the following command to log into this server:");
     eprintln!();
-    eprintln!("    attic login local http://localhost:8080 {root_token}");
+    eprintln!("    celler login local http://localhost:8080 {root_token}");
     eprintln!();
     eprintln!("Enjoy!");
     eprintln!("-----------------");
