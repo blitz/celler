@@ -5,11 +5,11 @@
 ## Does it replace [Cachix](https://www.cachix.org)?
 
 No, it does not.
-Cachix is an awesome product and the direct inspiration for the user experience of Attic.
-It works at a much larger scale than Attic and is a proven solution.
+Cachix is an awesome product and the direct inspiration for the user experience of Celler.
+It works at a much larger scale than Celler and is a proven solution.
 Numerous open-source projects in the Nix community (including mine!) use Cachix to share publicly-available binaries.
 
-Attic can be thought to provide a similar user experience at a much smaller scale (personal or team use).
+Celler can be thought to provide a similar user experience at a much smaller scale (personal or team use).
 
 ## What happens if a user uploads a path that is already in the global cache?
 
@@ -53,14 +53,14 @@ By chunking the entire NAR, it's possible to configure the average chunk size to
 This is also the approach [`casync`](https://github.com/systemd/casync) has taken.
 
 You may have heard that [the Tvix store protocol](https://flokli.de/posts/2022-06-30-store-protocol/) chunks individual files instead of the NAR.
-The design of Attic is driven by the desire to effectively utilize existing platforms with practical limitations, while looking forward to the future.
+The design of Celler is driven by the desire to effectively utilize existing platforms with practical limitations, while looking forward to the future.
 
 ## What happens if a chunk is corrupt/missing?
 
 When a chunk is deleted from the database, all dependent `.nar` will become unavailable (503).
 However, this can be recovered from automatically when any NAR containing the chunk is uploaded.
 
-At the moment, Attic cannot automatically detect when a chunk is corrupt or missing.
+At the moment, Celler cannot automatically detect when a chunk is corrupt or missing.
 Correctly distinguishing between transient and persistent failures is difficult.
 The `celleradm` utility will have the functionality to kill/delete bad chunks.
 

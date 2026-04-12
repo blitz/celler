@@ -2,7 +2,7 @@
 authors = ["Zhaofeng Li"]
 language = "en"
 src = "src"
-title = "Attic"
+title = "Celler"
 
 [output.html]
 git-repository-url = "https://github.com/blitz/celler"

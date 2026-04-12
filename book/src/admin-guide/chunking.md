@@ -1,7 +1,7 @@
 # Chunking
 
-Attic uses the [FastCDC algorithm](https://www.usenix.org/conference/atc16/technical-sessions/presentation/xia) to split uploaded NARs into chunks for deduplication.
-There are four main parameters that control chunking in Attic:
+Celler uses the [FastCDC algorithm](https://www.usenix.org/conference/atc16/technical-sessions/presentation/xia) to split uploaded NARs into chunks for deduplication.
+There are four main parameters that control chunking in Celler:
 
 - `nar-size-threshold`: The minimum NAR size to trigger chunking
     - When set to 0, chunking is disabled entirely for newly-uploaded NARs

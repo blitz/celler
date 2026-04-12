@@ -1,6 +1,6 @@
 # Tutorial
 
-Let's spin up Attic in just 15 minutes (yes, it works on macOS too!):
+Let's spin up Celler in just 15 minutes (yes, it works on macOS too!):
 
 ```bash
 $ nix shell github:blitz/celler
@@ -10,22 +10,18 @@ Simply run `cellerd` to start the server in monolithic mode with a SQLite databa
 
 ```console
 $ cellerd
-Attic Server 0.1.0 (release)
+Celler Server 0.1.0 (release)
 
 -----------------
-Welcome to Attic!
+Welcome to Celler!
 
 A simple setup using SQLite and local storage has been configured for you in:
 
-    /home/zhaofeng/.config/attic/server.toml
+    /home/blitz/.config/celler/server.toml
 
 Run the following command to log into this server:
 
     celler login local http://localhost:8080 eyJ...
-
-Documentations and guides:
-
-    https://docs.attic.rs
 
 Enjoy!
 -----------------
@@ -58,19 +54,19 @@ Let's push `celler` itself to the cache:
 ```console
 $ celler push hello $(which celler)
 ⚙️ Pushing 1 paths to "hello" on "local" (0 already cached, 45 in upstream)...
-✅ r5d7217c0rjd5iiz1g2nhvd15frck9x2-attic-0.1.0 (52.89 MiB/s)
+✅ r5d7217c0rjd5iiz1g2nhvd15frck9x2-celler-0.1.0 (52.89 MiB/s)
 ```
 
 The interesting thing is that `celler` automatically skipped over store paths cached by `cache.nixos.org`!
 This behavior can be configured on a per-cache basis.
 
-Note that Attic performs content-addressed global deduplication, so when you upload the same store path to another cache, the underlying NAR is only stored once.
+Note that Celler performs content-addressed global deduplication, so when you upload the same store path to another cache, the underlying NAR is only stored once.
 Each cache is essentially a restricted view of the global cache.
 
 ## Pulling
 
 Now, let's pull it back from the cache.
-For demonstration purposes, let's use `--store` to make Nix download to another directory because Attic already exists in `/nix/store`:
+For demonstration purposes, let's use `--store` to make Nix download to another directory because Celler already exists in `/nix/store`:
 
 ```console
 # Automatically configures ~/.config/nix/nix.conf for you
@@ -82,19 +78,19 @@ Configuring Nix to use "hello" on "local":
 
 $ nix-store --store $PWD/nix-demo -r $(which celler)
 [snip]
-copying path '/nix/store/r5d7217c0rjd5iiz1g2nhvd15frck9x2-attic-0.1.0' from 'http://localhost:8080/hello'...
+copying path '/nix/store/r5d7217c0rjd5iiz1g2nhvd15frck9x2-celler-0.1.0' from 'http://localhost:8080/hello'...
 warning: you did not specify '--add-root'; the result might be removed by the garbage collector
-/nix/store/r5d7217c0rjd5iiz1g2nhvd15frck9x2-attic-0.1.0
+/nix/store/r5d7217c0rjd5iiz1g2nhvd15frck9x2-celler-0.1.0
 
-$ ls nix-demo/nix/store/r5d7217c0rjd5iiz1g2nhvd15frck9x2-attic-0.1.0/bin/celler
-nix-demo/nix/store/r5d7217c0rjd5iiz1g2nhvd15frck9x2-attic-0.1.0/bin/celler
+$ ls nix-demo/nix/store/r5d7217c0rjd5iiz1g2nhvd15frck9x2-celler-0.1.0/bin/celler
+nix-demo/nix/store/r5d7217c0rjd5iiz1g2nhvd15frck9x2-celler-0.1.0/bin/celler
 ```
 
 Note that to pull into the actual Nix Store, your user must be considered [trusted](https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-trusted-users) by the `nix-daemon`.
 
 ## Access Control
 
-Attic performs stateless authentication using signed JWT tokens which contain permissions.
+Celler performs stateless authentication using signed JWT tokens which contain permissions.
 The root token printed out by `cellerd` is all-powerful and should not be shared.
 
 Let's create another token that can only access the `hello` cache:
@@ -152,8 +148,8 @@ Now the store path doesn't exist on the cache anymore!
 ```console
 $ nix-store --store $PWD/nix-demo-2 -r $(which celler)
 don't know how to build these paths:
-  /nix/store/v660wl07i1lcrrgpr1yspn2va5d1xgjr-attic-0.1.0
-error: build of '/nix/store/v660wl07i1lcrrgpr1yspn2va5d1xgjr-attic-0.1.0' failed
+  /nix/store/v660wl07i1lcrrgpr1yspn2va5d1xgjr-celler-0.1.0
+error: build of '/nix/store/v660wl07i1lcrrgpr1yspn2va5d1xgjr-celler-0.1.0' failed
 
 $ curl http://localhost:8080/hello/v660wl07i1lcrrgpr1yspn2va5d1xgjr.narinfo
 {"code":404,"error":"NoSuchObject","message":"The requested object does not exist."}
@@ -176,7 +172,7 @@ Binary Cache Endpoint: http://localhost:8080/hello
      Retention Period: Global Default
 ```
 
-Because of Attic's global deduplication, garbage collection actually happens on three levels:
+Because of Celler's global deduplication, garbage collection actually happens on three levels:
 
 1. **Local Cache**: When an object is garbage collected, only the mapping between the metadata in the local cache and the NAR in the global cache gets deleted. The local cache loses access to the NAR, but the storage isn't freed.
 2. **Global NAR Store**: Orphan NARs not referenced by any local cache then become eligible for deletion.
@@ -186,7 +182,7 @@ Because of Attic's global deduplication, garbage collection actually happens on 
 
 In just a few commands, we have:
 
-1. Set up a new Attic server and a binary cache
+1. Set up a new Celler server and a binary cache
 2. Pushed store paths to it
 3. Configured Nix to use the new binary cache
 4. Generated access tokens that provide restricted access
@@ -195,11 +191,11 @@ In just a few commands, we have:
 
 ## What's next
 
-> Note: Attic is an early prototype and everything is subject to change! It may be full of holes and APIs may be changed without backward-compatibility. You might even be required to reset the entire database. I would love to have people give it a try, but please keep that in mind ️:)
+> Note: Celler is an early prototype and everything is subject to change! It may be full of holes and APIs may be changed without backward-compatibility. You might even be required to reset the entire database. I would love to have people give it a try, but please keep that in mind ️:)
 
 For a less temporary setup, you can set up `cellerd` with PostgreSQL and S3.
 You should also place it behind a load balancer like NGINX to provide HTTPS.
-Take a look at `~/.config/attic/server.toml` to see what you can configure!
+Take a look at `~/.config/celler/server.toml` to see what you can configure!
 
 While it's easy to get started by running `cellerd` in monolithic mode, for production use it's best to run different components of `cellerd` separately with `--mode`:
 

@@ -1,6 +1,6 @@
 # Deploying to NixOS
 
-Attic provides [a NixOS module](https://github.com/blitz/celler/blob/main/nixos/cellerd.nix) that allows you to deploy the Attic Server on a NixOS machine.
+Celler provides [a NixOS module](https://github.com/blitz/celler/blob/main/nixos/cellerd.nix) that allows you to deploy the Celler Server on a NixOS machine.
 
 ## Prerequisites
 
@@ -30,7 +30,7 @@ Ensure the file is only accessible by root.
 You can import the module in one of two ways:
 
 - Ad-hoc: Import the `nixos/cellerd.nix` from [the repository](https://github.com/blitz/celler).
-- Flakes: Add `github:blitz/celler` as an input, then import `attic.nixosModules.cellerd`.
+- Flakes: Add `github:blitz/celler` as an input, then import `celler.nixosModules.cellerd`.
 
 ## Configuration
 
@@ -76,7 +76,7 @@ You can import the module in one of two ways:
 }
 ```
 
-After the new configuration is deployed, the Attic Server will be accessible on port 8080.
+After the new configuration is deployed, the Celler Server will be accessible on port 8080.
 It's highly recommended to place it behind a reverse proxy like [NGINX](https://nixos.wiki/wiki/Nginx) to provide HTTPS.
 
 ## Operations

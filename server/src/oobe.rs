@@ -89,10 +89,6 @@ pub async fn run_oobe() -> Result<()> {
     eprintln!();
     eprintln!("    attic login local http://localhost:8080 {root_token}");
     eprintln!();
-    eprintln!("Documentations and guides:");
-    eprintln!();
-    eprintln!("    https://docs.attic.rs");
-    eprintln!();
     eprintln!("Enjoy!");
     eprintln!("-----------------");
     eprintln!();

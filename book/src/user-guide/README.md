@@ -5,7 +5,7 @@
 You should have received an `celler login` command from an admin like the following:
 
 ```
-celler login central https://attic.domain.tld/ eyJ...
+celler login central https://celler.domain.tld/ eyJ...
 ```
 
 The `celler` client can work with multiple servers at the same time.
@@ -14,7 +14,7 @@ To select the `foo` cache from server `central`, use one of the following:
 - `foo`, if the `central` server is configured as the default
 - `central:foo`
 
-To configure the default server, set `default-server` in `~/.config/attic/config.toml`.
+To configure the default server, set `default-server` in `~/.config/celler/config.toml`.
 
 ## Enabling a cache
 
@@ -32,7 +32,7 @@ If you wish to configure Nix manually, you can view the binary cache endpoint an
 $ celler cache info foo
                Public: true
            Public Key: foo:WcnO6s4aVkB6CKRaPPpKvHLZykWXASV6c+/Ssg8uQEY=
-Binary Cache Endpoint: https://attic.domain.tld/foo
+Binary Cache Endpoint: https://celler.domain.tld/foo
       Store Directory: /nix/store
              Priority: 41
   Upstream Cache Keys: ["cache.nixos.org-1"]
@@ -45,7 +45,7 @@ On NixOS, you can configure the cache declaratively in your system configuration
 {
   nix.settings = {
     substituters = [
-      "https://attic.domain.tld/foo"
+      "https://celler.domain.tld/foo"
     ];
     trusted-public-keys = [
       "foo:WcnO6s4aVkB6CKRaPPpKvHLZykWXASV6c+/Ssg8uQEY="
