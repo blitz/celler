@@ -60,3 +60,14 @@ fn test_from_typed() {
         Err(AtticError::HashError(Error::UnsupportedHashAlgorithm(alg))) if alg == "md5"
     ));
 }
+
+#[test]
+fn test_from_sri() {
+    let base16 = "sha256:1c37d01af40be2e80691de3cc3df44377a699afbb17c68f080964b2fd071fc13";
+    let sri = "sha256-HDfQGvQL4ugGkd48w99EN3ppmvuxfGjwgJZLL9Bx/BM=";
+
+    assert_eq!(
+        Hash::from_sri(sri).unwrap(),
+        Hash::from_typed(base16).unwrap()
+    );
+}
