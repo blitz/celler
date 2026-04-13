@@ -3,6 +3,7 @@
 #[cfg(test)]
 mod tests;
 
+use base64::Engine;
 use displaydoc::Display;
 use serde::{de, ser, Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -22,6 +23,9 @@ pub enum Error {
     /// The string lacks a colon separator.
     NoColonSeparator,
 
+    /// The string lacks a dash separator.
+    NoDashSeparator,
+
     /// Hash algorithm {0} is not supported.
     UnsupportedHashAlgorithm(String),
 
@@ -31,11 +35,15 @@ pub enum Error {
     /// Invalid base32 hash.
     InvalidBase32Hash,
 
-    /// Invalid length for {typ} string: Must be either {base16_len} (hexadecimal) or {base32_len} (base32), got {actual}.
+    /// Invalid base64 hash.
+    InvalidBase64Hash(base64::DecodeError),
+
+    /// Invalid length for {typ} string: Must be either {base16_len} (hexadecimal) or {base32_len} (base32) or {base64_len} (base64), got {actual}.
     InvalidHashStringLength {
         typ: &'static str,
         base16_len: usize,
         base32_len: usize,
+        base64_len: usize,
         actual: usize,
     },
 }
@@ -53,6 +61,22 @@ impl Hash {
         let colon = s.find(':').ok_or(Error::NoColonSeparator)?;
 
         let (typ, rest) = s.split_at(colon);
+        let hash = &rest[1..];
+
+        match typ {
+            "sha256" => {
+                let v = decode_hash(hash, "SHA-256", 32)?;
+                Ok(Self::Sha256(v.try_into().unwrap()))
+            }
+            _ => Err(Error::UnsupportedHashAlgorithm(typ.to_owned()).into()),
+        }
+    }
+
+    /// Parses a hash from an SRI (Subresource Integrity) string.
+    pub fn from_sri(s: &str) -> AtticResult<Self> {
+        let dash = s.find('-').ok_or(Error::NoDashSeparator)?;
+
+        let (typ, rest) = s.split_at(dash);
         let hash = &rest[1..];
 
         match typ {
@@ -117,20 +141,33 @@ impl Serialize for Hash {
     }
 }
 
-/// Decodes a base16 or base32 encoded hash containing a specified number of bytes.
+/// Decodes a base16 or base32 or base64 encoded hash containing a specified number of bytes.
 fn decode_hash(s: &str, typ: &'static str, expected_bytes: usize) -> AtticResult<Vec<u8>> {
+    // For smaller values, the base32 and base64 may be the same and we misidentify how to decode them.
+    assert!(expected_bytes > 10);
+
     let base16_len = expected_bytes * 2;
     let base32_len = (expected_bytes * 8 - 1) / 5 + 1;
+    let base64_len = (4 * expected_bytes / 3).next_multiple_of(4);
+
+    // This follows from the earlier assumption, but just to be sure.
+    assert!(base16_len > base32_len);
+    assert!(base32_len > base64_len);
 
     let v = if s.len() == base16_len {
         hex::decode(s).map_err(Error::InvalidBase16Hash)?
     } else if s.len() == base32_len {
         nix_base32::from_nix_base32(s).ok_or(Error::InvalidBase32Hash)?
+    } else if s.len() == base64_len {
+        base64::engine::general_purpose::STANDARD
+            .decode(s)
+            .map_err(Error::InvalidBase64Hash)?
     } else {
         return Err(Error::InvalidHashStringLength {
             typ,
             base16_len,
             base32_len,
+            base64_len,
             actual: s.len(),
         }
         .into());
