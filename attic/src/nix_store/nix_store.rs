@@ -192,20 +192,22 @@ impl NixStore {
 
     /// Returns detailed information on a path.
     pub async fn query_path_info(&self, store_path: StorePath) -> AtticResult<ValidPathInfo> {
+        let full_store_path = self.store_dir().join(&store_path.base_name);
         let child = Command::new("nix")
             .arg("--experimental-features")
             .arg("nix-command")
             .arg("path-info")
             .arg("--json")
             .arg("--")
-            .arg(self.store_dir().join(&store_path.base_name))
+            .arg(&full_store_path)
             .stderr(Stdio::piped())
             .output()
             .await?;
 
         if !child.status.success() {
             return Err(std::io::Error::other(format!(
-                "nix path-info exited with {}: {}",
+                "nix path-info {} exited with {}: {}",
+                full_store_path.display(),
                 child.status,
                 str::from_utf8(&child.stderr).unwrap_or("(invalid UTF-8)")
             )))?;
