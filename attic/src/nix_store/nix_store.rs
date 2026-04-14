@@ -169,8 +169,8 @@ impl NixStore {
         include_outputs: bool,
         include_derivers: bool,
     ) -> AtticResult<Vec<StorePath>> {
-        if flip_directions || include_outputs || include_derivers {
-            todo!("{store_paths:?} {flip_directions:?} {include_outputs:?} {include_derivers:?}")
+        if flip_directions || include_derivers {
+            todo!("{store_paths:?} {flip_directions:?} {include_derivers:?}")
         }
 
         let to_store_path = |p: StorePath| self.store_dir().join(p.base_name);
@@ -178,6 +178,7 @@ impl NixStore {
         let child = Command::new("nix-store")
             .arg("--query")
             .arg("--requisites")
+            .args(include_outputs.then_some("--include-outputs"))
             .arg("--")
             .args(store_paths.into_iter().map(to_store_path))
             .output()
