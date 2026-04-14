@@ -38,7 +38,7 @@ use axum::{
     http::{uri::Scheme, Uri},
     Router,
 };
-use sea_orm::{query::Statement, ConnectionTrait, Database, DatabaseConnection};
+use sea_orm::{ConnectionTrait, Database, DatabaseConnection};
 use tokio::net::TcpListener;
 use tokio::sync::OnceCell;
 use tokio::time;
@@ -158,11 +158,9 @@ impl StateInner {
     /// Sends periodic heartbeat queries to the database.
     async fn run_db_heartbeat(&self) -> ServerResult<()> {
         let db = self.database().await?;
-        let stmt =
-            Statement::from_string(db.get_database_backend(), "SELECT 'heartbeat';".to_string());
 
         loop {
-            let _ = db.execute_raw(stmt.clone()).await;
+            let _ = db.execute_unprepared("SELECT 'heartbeat';").await;
             time::sleep(Duration::from_secs(60)).await;
         }
     }
