@@ -63,9 +63,6 @@ in
         ops = [
           postgresql
           sqlite-interactive
-
-          skopeo
-          manifest-tool
         ];
 
         bench = [
