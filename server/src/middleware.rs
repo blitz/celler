@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use anyhow::anyhow;
 use axum::{
-    extract::{Extension, Host, Request},
+    extract::{Extension, Request},
     http::HeaderValue,
     middleware::Next,
     response::Response,
@@ -13,13 +13,21 @@ use super::{AuthState, RequestState, RequestStateInner, State};
 use crate::error::{ErrorKind, ServerResult};
 use attic::api::binary_cache::CELLER_CACHE_VISIBILITY;
 
+fn extract_host(req: &Request) -> Option<String> {
+    req.headers()
+        .get("host")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_owned())
+}
+
 /// Initializes per-request state.
 pub async fn init_request_state(
     Extension(state): Extension<State>,
-    Host(host): Host,
     mut req: Request,
     next: Next,
 ) -> Response {
+    let host = extract_host(&req).unwrap_or_default();
+
     // X-Forwarded-Proto is an untrusted header
     let client_claims_https =
         if let Some(x_forwarded_proto) = req.headers().get("x-forwarded-proto") {
@@ -47,14 +55,18 @@ pub async fn init_request_state(
 /// the first place.
 pub async fn restrict_host(
     Extension(state): Extension<State>,
-    Host(host): Host,
     req: Request,
     next: Next,
 ) -> ServerResult<Response> {
     let allowed_hosts = &state.config.allowed_hosts;
 
-    if !allowed_hosts.is_empty() && !allowed_hosts.iter().any(|h| h.as_str() == host) {
-        return Err(ErrorKind::RequestError(anyhow!("Bad Host")).into());
+    if !allowed_hosts.is_empty() {
+        let host = extract_host(&req)
+            .ok_or_else(|| ErrorKind::RequestError(anyhow!("Missing Host header")))?;
+
+        if !allowed_hosts.iter().any(|h| h.as_str() == host) {
+            return Err(ErrorKind::RequestError(anyhow!("Bad Host")).into());
+        }
     }
 
     Ok(next.run(req).await)
