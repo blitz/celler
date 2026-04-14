@@ -127,8 +127,8 @@ fn init_logging(tokio_console: bool) {
 
 fn dump_version() {
     #[cfg(debug_assertions)]
-    eprintln!("Attic Server {} (debug)", env!("CARGO_PKG_VERSION"));
+    eprintln!("Celler {} (debug)", env!("CARGO_PKG_VERSION"));
 
     #[cfg(not(debug_assertions))]
-    eprintln!("Attic Server {} (release)", env!("CARGO_PKG_VERSION"));
+    eprintln!("Celler {} (release)", env!("CARGO_PKG_VERSION"));
 }
