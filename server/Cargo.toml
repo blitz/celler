@@ -75,7 +75,7 @@ features = [
 ]
 
 [dependencies.sea-orm]
-version = "1.1.13"
+version = "2.0.0-rc.38"
 features = [
 	"runtime-tokio-rustls",
 	"macros",
@@ -85,7 +85,7 @@ features = [
 ]
 
 [dependencies.sea-orm-migration]
-version = "1.1.13"
+version = "2.0.0-rc.38"
 
 [dependencies.tokio]
 workspace = true

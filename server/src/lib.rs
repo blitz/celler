@@ -110,22 +110,24 @@ impl StateInner {
                 let db = Database::connect(&self.config.database.url)
                     .await
                     .map_err(ServerError::database_error);
-                if let Ok(DatabaseConnection::SqlxSqlitePoolConnection(ref conn)) = db {
-                    // execute some sqlite-specific performance optimizations
-                    // see https://phiresky.github.io/blog/2020/sqlite-performance-tuning/ for
-                    // more details
-                    // intentionally ignore errors from this: this is purely for performance,
-                    // not for correctness, so we can live without this
-                    _ = conn
-                        .execute_unprepared(
-                            "
+                if let Ok(ref db) = db {
+                    if db.get_database_backend() == sea_orm::DatabaseBackend::Sqlite {
+                        // execute some sqlite-specific performance optimizations
+                        // see https://phiresky.github.io/blog/2020/sqlite-performance-tuning/ for
+                        // more details
+                        // intentionally ignore errors from this: this is purely for performance,
+                        // not for correctness, so we can live without this
+                        _ = db
+                            .execute_unprepared(
+                                "
                         pragma journal_mode=WAL;
                         pragma synchronous=normal;
                         pragma temp_store=memory;
                         pragma mmap_size = 30000000000;
                         ",
-                        )
-                        .await;
+                            )
+                            .await;
+                    }
                 }
 
                 db
@@ -160,7 +162,7 @@ impl StateInner {
             Statement::from_string(db.get_database_backend(), "SELECT 'heartbeat';".to_string());
 
         loop {
-            let _ = db.execute(stmt.clone()).await;
+            let _ = db.execute_raw(stmt.clone()).await;
             time::sleep(Duration::from_secs(60)).await;
         }
     }
