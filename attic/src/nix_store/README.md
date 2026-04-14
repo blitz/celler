@@ -1,7 +1,6 @@
 # Nix Store Bindings
 
-This directory contains a set of high-level Rust bindings to `libnixstore`, compatible with `async`/`await` semantics.
-We currently target Nix 2.4+.
+This directory contains a high-level async Nix store interface.
 
 ## Why?
 
