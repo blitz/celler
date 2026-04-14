@@ -9,7 +9,7 @@ use chrono::Utc;
 use sea_orm::entity::prelude::*;
 use sea_orm::entity::Iterable as EnumIterable;
 use sea_orm::query::{JoinType, QueryOrder, QuerySelect, QueryTrait};
-use sea_orm::sea_query::{Expr, LockBehavior, LockType, Query, Value};
+use sea_orm::sea_query::{Expr, ExprTrait, LockBehavior, LockType, Query, Value};
 use sea_orm::{ActiveValue::Set, ConnectionTrait, DatabaseConnection, FromQueryResult};
 use tokio::task;
 
@@ -157,7 +157,7 @@ impl AtticDatabase for DatabaseConnection {
 
         let stmt = query.build(self.get_database_backend());
         let results = self
-            .query_all(stmt)
+            .query_all_raw(stmt)
             .await
             .map_err(ServerError::database_error)?;
 
@@ -346,9 +346,8 @@ impl Drop for NarGuard {
                 )])
                 .and_where(nar::Column::Id.eq(nar_id))
                 .to_owned();
-            let stmt = database.get_database_backend().build(&decr_holders);
 
-            if let Err(e) = database.execute(stmt).await {
+            if let Err(e) = database.execute(&decr_holders).await {
                 tracing::warn!("Failed to decrement holders count: {}", e);
             }
         });
@@ -386,9 +385,8 @@ impl Drop for ChunkGuard {
                 )])
                 .and_where(chunk::Column::Id.eq(chunk_id))
                 .to_owned();
-            let stmt = database.get_database_backend().build(&decr_holders);
 
-            if let Err(e) = database.execute(stmt).await {
+            if let Err(e) = database.execute(&decr_holders).await {
                 tracing::warn!("Failed to decrement holders count: {}", e);
             }
         });

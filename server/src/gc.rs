@@ -8,7 +8,7 @@ use chrono::{Duration as ChronoDuration, Utc};
 use futures::future::join_all;
 use sea_orm::entity::prelude::*;
 use sea_orm::query::QuerySelect;
-use sea_orm::sea_query::{LockBehavior, LockType, Query};
+use sea_orm::sea_query::{Expr, ExprTrait, LockBehavior, LockType, Query};
 use sea_orm::{ConnectionTrait, FromQueryResult};
 use tokio::sync::Semaphore;
 use tokio::time;
@@ -76,7 +76,7 @@ async fn run_time_based_garbage_collection(state: &State) -> Result<()> {
         .column(cache::Column::Id)
         .column(cache::Column::Name)
         .column_as(retention_period.clone(), "retention_period")
-        .filter(retention_period.ne(0))
+        .filter(retention_period.ne(Expr::val(0)))
         .into_model::<CacheIdAndRetentionPeriod>()
         .all(db)
         .await?;
@@ -165,6 +165,8 @@ async fn run_reap_orphan_chunks(state: &State) -> Result<()> {
         sea_orm::DatabaseBackend::Postgres => u64::from(u16::MAX),
         // Default statement limit imposed by sqlite: https://www.sqlite.org/limits.html#max_variable_number
         sea_orm::DatabaseBackend::Sqlite => 500,
+        // Arbitrarily chosen.
+        _ => 500,
     };
 
     // find all orphan chunks...
@@ -186,16 +188,13 @@ async fn run_reap_orphan_chunks(state: &State) -> Result<()> {
     // ... and transition their state to Deleted
     //
     // Deleted chunks are essentially invisible from our normal queries
-    let transition_statement = {
-        let change_state = Query::update()
-            .table(Chunk)
-            .value(chunk::Column::State, ChunkState::Deleted)
-            .and_where(chunk::Column::Id.in_subquery(orphan_chunk_ids))
-            .to_owned();
-        db.get_database_backend().build(&change_state)
-    };
+    let transition_statement = Query::update()
+        .table(Chunk)
+        .value(chunk::Column::State, ChunkState::Deleted)
+        .and_where(chunk::Column::Id.in_subquery(orphan_chunk_ids))
+        .to_owned();
 
-    db.execute(transition_statement).await?;
+    db.execute(&transition_statement).await?;
 
     let orphan_chunks: Vec<chunk::Model> = Chunk::find()
         .filter(chunk::Column::State.eq(ChunkState::Deleted))
