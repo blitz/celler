@@ -55,11 +55,6 @@ in
           editorconfig-checker
         ];
 
-        utils = [
-          jq
-          just
-        ];
-
         ops = [
           postgresql
           sqlite-interactive
@@ -87,9 +82,6 @@ in
           RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
 
           NIX_PATH = "nixpkgs=${pkgs.path}";
-
-          # Used by `just with-nix` to build/test with alternative Nix versions.
-          NIX_VERSIONS = config.celler.nix-versions.manifestFile;
         };
       } cfg.extraArgs);
 
