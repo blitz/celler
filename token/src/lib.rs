@@ -252,22 +252,12 @@ impl Token {
         maybe_bound_audiences: &Option<HashSet<String>>,
     ) -> Result<Self> {
         let opts = VerificationOptions {
-            reject_before: None,
-            accept_future: false,
-            required_subject: None,
-            required_key_id: None,
-            required_public_key: None,
-            required_nonce: None,
             allowed_issuers: maybe_bound_issuer
                 .as_ref()
                 .map(|s| [s.to_owned()].into())
                 .to_owned(),
             allowed_audiences: maybe_bound_audiences.to_owned(),
-            time_tolerance: None,
-            max_validity: None,
-            max_token_length: None,
-            max_header_length: None,
-            artificial_time: None,
+            ..Default::default()
         };
 
         match signature_type {
