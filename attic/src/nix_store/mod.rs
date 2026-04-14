@@ -214,7 +214,7 @@ impl StorePath {
 impl StorePathHash {
     /// Creates a store path hash from a string.
     pub fn new(hash: String) -> AtticResult<Self> {
-        if hash.as_bytes().len() != STORE_PATH_HASH_LEN {
+        if hash.len() != STORE_PATH_HASH_LEN {
             return Err(AtticError::InvalidStorePathHash {
                 hash,
                 reason: "Hash is of invalid length",

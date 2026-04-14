@@ -80,11 +80,13 @@ pub struct UploadPathResult {
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
+#[derive(Default)]
 pub enum UploadPathResultKind {
     /// The path was uploaded.
     ///
     /// This is purely informational and servers may return
     /// this variant even when the NAR is deduplicated.
+    #[default]
     Uploaded,
 
     /// The path was globally deduplicated.
@@ -92,10 +94,4 @@ pub enum UploadPathResultKind {
     /// The exact semantics of what counts as deduplicated
     /// is opaque to the client.
     Deduplicated,
-}
-
-impl Default for UploadPathResultKind {
-    fn default() -> Self {
-        Self::Uploaded
-    }
 }

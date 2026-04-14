@@ -324,9 +324,7 @@ impl Token {
         match signature_type {
             SignatureType::HS256(key) => key.authenticate(token).map_err(Error::TokenError),
             SignatureType::RS256(key) => key.sign(token).map_err(Error::TokenError),
-            SignatureType::RS256PubkeyOnly(_) => {
-                return Err(Error::PubkeyOnlyCannotCreateToken);
-            }
+            SignatureType::RS256PubkeyOnly(_) => Err(Error::PubkeyOnlyCannotCreateToken),
         }
     }
 
