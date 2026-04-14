@@ -144,35 +144,20 @@ impl NixStore {
     pub async fn compute_fs_closure(
         &self,
         store_path: StorePath,
-        flip_directions: bool,
         include_outputs: bool,
-        include_derivers: bool,
     ) -> AtticResult<Vec<StorePath>> {
-        self.compute_fs_closure_multi(
-            vec![store_path],
-            flip_directions,
-            include_outputs,
-            include_derivers,
-        )
-        .await
+        self.compute_fs_closure_multi(vec![store_path], include_outputs)
+            .await
     }
 
     /// Returns the closure of a set of valid paths.
     ///
     /// This is the multi-path variant of `compute_fs_closure`.
-    /// If `flip_directions` is true, the set of paths that can reach `store_path` is
-    /// returned.
     pub async fn compute_fs_closure_multi(
         &self,
         store_paths: Vec<StorePath>,
-        flip_directions: bool,
         include_outputs: bool,
-        include_derivers: bool,
     ) -> AtticResult<Vec<StorePath>> {
-        if flip_directions || include_derivers {
-            todo!("{store_paths:?} {flip_directions:?} {include_derivers:?}")
-        }
-
         let to_store_path = |p: StorePath| self.store_dir().join(p.base_name);
 
         let child = Command::new("nix-store")

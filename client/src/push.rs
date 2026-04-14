@@ -415,9 +415,7 @@ impl PushPlan {
         let closure = if no_closure {
             roots
         } else {
-            store
-                .compute_fs_closure_multi(roots, false, false, false)
-                .await?
+            store.compute_fs_closure_multi(roots, false).await?
         };
 
         let mut store_path_map: HashMap<StorePathHash, ValidPathInfo> = {
