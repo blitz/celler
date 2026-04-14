@@ -181,7 +181,7 @@ async fn test_compute_fs_closure() {
             .expect("Could not parse store path");
 
         let actual: HashSet<StorePath> = store
-            .compute_fs_closure(path, false, false, false)
+            .compute_fs_closure(path, false)
             .await
             .expect("Could not compute closure")
             .into_iter()
@@ -210,7 +210,7 @@ async fn test_compute_fs_closure_multi() {
     ];
 
     let actual: HashSet<StorePath> = store
-        .compute_fs_closure_multi(paths, false, false, false)
+        .compute_fs_closure_multi(paths, false)
         .await
         .expect("Could not compute closure")
         .into_iter()

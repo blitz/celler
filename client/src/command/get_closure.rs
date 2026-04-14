@@ -24,7 +24,7 @@ pub async fn run(opts: Opts) -> Result<()> {
     let store = NixStore::connect()?;
     let store_path = store.follow_store_path(&sub.store_path)?;
     let closure = store
-        .compute_fs_closure(store_path, false, sub.include_outputs, false)
+        .compute_fs_closure(store_path, sub.include_outputs)
         .await?;
 
     for path in &closure {
