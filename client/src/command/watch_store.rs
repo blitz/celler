@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context as _, Result};
 use clap::Parser;
 use indicatif::MultiProgress;
 use notify::{EventKind, RecursiveMode, Watcher};
@@ -113,7 +113,9 @@ pub async fn run(opts: Opts) -> Result<()> {
                         .collect::<Vec<StorePath>>();
 
                     if !paths.is_empty() {
-                        session.queue_many(paths).unwrap();
+                        session
+                            .queue_many(paths)
+                            .context("Failed to queue paths to push")?;
                     }
                 }
             }
