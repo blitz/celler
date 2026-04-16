@@ -93,7 +93,7 @@ lazy_static! {
 /// may not actually exist.
 ///
 /// This guarantees that the base name is of valid format.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct StorePath {
     /// Base name of the store path.
     ///
