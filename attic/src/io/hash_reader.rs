@@ -101,7 +101,7 @@ where
 
         let filled = buf.filled();
         let unconsumed = &filled[old_filled..];
-        if unconsumed.len() == 0 {
+        if unconsumed.is_empty() {
             this.state.eof();
         } else {
             this.state.hash_unconsumed(unconsumed);
@@ -122,7 +122,7 @@ where
         let this = self.project();
         let unconsumed = ready!(this.inner.poll_fill_buf(cx))?;
 
-        if unconsumed.len() == 0 {
+        if unconsumed.is_empty() {
             this.state.eof();
         } else {
             this.state.hash_unconsumed(unconsumed);

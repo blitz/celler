@@ -22,11 +22,11 @@ use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::{Duration, Instant};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context as _, Result};
 use async_channel as channel;
 use bytes::Bytes;
 use futures::future::join_all;
-use futures::stream::{Stream, TryStreamExt};
+use futures::stream::{self, Stream, StreamExt, TryStreamExt};
 use indicatif::{HumanBytes, MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use tokio::sync::{mpsc, Mutex};
 use tokio::task::{spawn, JoinHandle};
@@ -38,6 +38,7 @@ use attic::api::v1::upload_path::{UploadPathNarInfo, UploadPathResult, UploadPat
 use attic::cache::CacheName;
 use attic::error::AtticResult;
 use attic::nix_store::{NixStore, StorePath, StorePathHash, ValidPathInfo};
+use tracing::error;
 
 type JobSender = channel::Sender<ValidPathInfo>;
 type JobReceiver = channel::Receiver<ValidPathInfo>;
@@ -280,6 +281,7 @@ impl PushSession {
             )
             .await
             {
+                error!("Push session worker died: {e:#}");
                 let _ = result_sender.send(Err(e)).await;
             }
         });
@@ -350,7 +352,8 @@ impl PushSession {
                     config.no_closure,
                     config.ignore_upstream_cache_filter,
                 )
-                .await?;
+                .await
+                .context("Failed to compute push plan")?;
 
             let mut known_paths = known_paths_mutex.lock().await;
             plan.store_path_map
@@ -358,7 +361,10 @@ impl PushSession {
 
             // Push everything
             for (store_path_hash, path_info) in plan.store_path_map.into_iter() {
-                pusher.queue(path_info).await?;
+                pusher
+                    .queue(path_info)
+                    .await
+                    .context("Failed to queue path for upload")?;
                 known_paths.insert(store_path_hash);
             }
 
@@ -419,8 +425,7 @@ impl PushPlan {
         };
 
         let mut store_path_map: HashMap<StorePathHash, ValidPathInfo> = {
-            let futures = closure
-                .iter()
+            stream::iter(closure.iter().cloned())
                 .map(|path| {
                     let store = store.clone();
                     let path = path.clone();
@@ -428,12 +433,15 @@ impl PushPlan {
 
                     async move {
                         let path_info = store.query_path_info(path).await?;
-                        Ok((path_hash, path_info))
+                        Ok::<_, anyhow::Error>((path_hash, path_info))
                     }
                 })
-                .collect::<Vec<_>>();
-
-            join_all(futures).await.into_iter().collect::<Result<_>>()?
+                // TODO While we shell out to the nix CLI to query path info,
+                // limit the total concurrency. Otherwise, we see the Nix daemon
+                // rejecting connections.
+                .buffer_unordered(10)
+                .try_collect()
+                .await?
         };
 
         let num_all_paths = store_path_map.len();

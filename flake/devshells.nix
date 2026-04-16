@@ -35,11 +35,8 @@ in
       cfg = config.celler.devshell;
     in {
       celler.devshell.packageSets = with pkgs; {
-        rustc = lib.optionals (config.celler.toolchain == null) [
-          rustc
-        ];
-
         rust = [
+          rustc
           cargo-audit
           cargo-expand
           cargo-outdated

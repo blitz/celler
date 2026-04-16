@@ -414,10 +414,12 @@ fn load_token_rs256_pubkey_from_env() -> Option<JWTSigningConfig> {
 }
 
 fn load_database_url_from_env() -> String {
-    env::var(ENV_DATABASE_URL).expect(&format!(
-        "Database URL must be specified in either database.url \
+    env::var(ENV_DATABASE_URL).unwrap_or_else(|_| {
+        panic!(
+            "Database URL must be specified in either database.url \
         or the {ENV_DATABASE_URL} environment."
-    ))
+        )
+    })
 }
 
 impl Default for JWTConfig {
@@ -561,7 +563,7 @@ fn default_default_retention_period() -> Duration {
 }
 
 fn default_max_nar_info_size() -> usize {
-    1 * 1024 * 1024 // 1 MiB
+    1024 * 1024 // 1 MiB
 }
 
 fn load_config_from_path(path: &Path) -> Result<Config> {

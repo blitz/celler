@@ -3,11 +3,7 @@
 
 { stdenv
 , lib
-, buildPackages
 , craneLib
-, rust
-, runCommand
-, writeClosure
 , pkg-config
 , installShellFiles
 , jq
@@ -16,12 +12,9 @@
 , boost
 , libarchive
 
-, extraPackageArgs ? {}
 }:
 
 let
-  version = "0.1.0";
-
   ignoredPaths = [
     ".ci"
     ".github"
@@ -32,52 +25,34 @@ let
     "target"
   ];
 
-  src = lib.cleanSourceWith {
-    filter = name: type: !(type == "directory" && builtins.elem (baseNameOf name) ignoredPaths);
-    src = lib.cleanSource ./.;
-  };
-
-  nativeBuildInputs = [
-    pkg-config
-    installShellFiles
-  ];
-
-  buildInputs = [
-    nix boost
-    libarchive
-  ];
-
-  crossArgs = let
-    rustTargetSpec = rust.toRustTargetSpec stdenv.hostPlatform;
-    rustTargetSpecEnv = lib.toUpper (builtins.replaceStrings [ "-" ] [ "_" ] rustTargetSpec);
-  in lib.optionalAttrs (stdenv.hostPlatform != stdenv.buildPlatform) {
-    depsBuildBuild = [ buildPackages.stdenv.cc ];
-
-    CARGO_BUILD_TARGET = rustTargetSpec;
-    "CARGO_TARGET_${rustTargetSpecEnv}_LINKER" = "${stdenv.cc.targetPrefix}cc";
-  };
-
-  extraArgs = crossArgs // extraPackageArgs;
-
-  cargoArtifacts = craneLib.buildDepsOnly ({
+  commonArgs = {
     pname = "celler";
-    inherit src version nativeBuildInputs buildInputs;
-  } // extraArgs);
+    version = "0.1.0";
 
-  mkCeller = {
-    packages,
-  }: let
-    cargoPackageArgs = map (p: "-p ${p}") packages;
-  in craneLib.buildPackage ({
-    pname = "celler";
-    inherit src version nativeBuildInputs buildInputs cargoArtifacts;
+    src = lib.cleanSourceWith {
+      filter = name: type: !(type == "directory" && builtins.elem (baseNameOf name) ignoredPaths);
+      src = lib.cleanSource ./.;
+    };
 
-    CELLER_DISTRIBUTOR = "celler";
+    nativeBuildInputs = [
+      # pkg-config
+      installShellFiles
+    ];
 
-    # See comment in `celler-tests`
+    buildInputs = [
+      # Nothing yet.
+    ];
+
     doCheck = false;
 
-    cargoExtraArgs = lib.concatStringsSep " " cargoPackageArgs;
+    CELLER_DISTRIBUTOR = "celler";
+  };
+
+  cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+
+  celler = craneLib.buildPackage (commonArgs // {
+
+    inherit cargoArtifacts;
 
     postInstall = lib.optionalString (stdenv.hostPlatform == stdenv.buildPlatform) ''
       if [[ -f $out/bin/celler ]]; then
@@ -96,26 +71,18 @@ let
       platforms = platforms.linux ++ platforms.darwin;
       mainProgram = "celler";
     };
-
-    passthru = {
-      inherit nix;
-    };
-  } // extraArgs);
-
-  celler = mkCeller {
-    packages = ["attic-client" "attic-server"];
-  };
+  });
 
   # Celler interacts with Nix directly and its tests require trusted-user access
   # to nix-daemon to import NARs, which is not possible in the build sandbox.
   # In the CI pipeline, we build the test executable inside the sandbox, then
   # run it outside.
-  celler-tests = craneLib.mkCargoDerivation ({
+  celler-tests = craneLib.mkCargoDerivation (commonArgs // {
     pname = "celler-tests";
 
-    inherit src version buildInputs cargoArtifacts;
+    inherit cargoArtifacts;
 
-    nativeBuildInputs = nativeBuildInputs ++ [ jq ];
+    nativeBuildInputs = commonArgs.nativeBuildInputs ++ [ jq ];
 
     doCheck = true;
 
@@ -132,7 +99,7 @@ let
 
       runHook postInstall
     '';
-  } // extraArgs);
+  });
 in {
-  inherit cargoArtifacts celler celler-tests;
+  inherit celler celler-tests;
 }
