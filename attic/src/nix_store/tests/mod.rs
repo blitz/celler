@@ -246,15 +246,17 @@ async fn test_query_path_info() {
     let path_info = store
         .query_path_info(path)
         .await
-        .expect("Could not query path info");
+        .expect("Could not query path info")
+        .unwrap();
 
     eprintln!("Path info: {:?}", path_info);
 
     assert_eq!(nar.nar().len() as u64, path_info.nar_size);
     assert_eq!(
-        vec![PathBuf::from(
+        vec![StorePath::from_base_name(
             "3k1wymic8p7h5pfcqfhh0jan8ny2a712-attic-test-with-deps-c-final"
-        ),],
+        )
+        .unwrap(),],
         path_info.references
     );
 }

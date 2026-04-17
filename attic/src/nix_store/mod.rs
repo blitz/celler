@@ -134,7 +134,7 @@ pub struct ValidPathInfo {
     /// References.
     ///
     /// This list only contains base names of the paths.
-    pub references: Vec<PathBuf>,
+    pub references: Vec<StorePath>,
 
     /// Signatures.
     pub sigs: Vec<String>,
@@ -145,18 +145,19 @@ pub struct ValidPathInfo {
 
 impl StorePath {
     /// Creates a StorePath with a base name.
-    fn from_base_name(base_name: PathBuf) -> AtticResult<Self> {
+    fn from_base_name(base_name: impl AsRef<Path>) -> AtticResult<Self> {
+        let base_name = base_name.as_ref().to_owned();
         let s = base_name
             .as_os_str()
             .to_str()
             .ok_or_else(|| AtticError::InvalidStorePathName {
-                base_name: base_name.clone(),
+                base_name: base_name.to_owned(),
                 reason: "Name contains non-UTF-8 characters",
             })?;
 
         if !STORE_BASE_NAME_REGEX.is_match(s) {
             return Err(AtticError::InvalidStorePathName {
-                base_name,
+                base_name: base_name,
                 reason: "Name is of invalid format",
             });
         }

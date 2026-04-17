@@ -417,6 +417,18 @@ impl PushPlan {
         no_closure: bool,
         ignore_upstream_filter: bool,
     ) -> Result<Self> {
+        let roots = {
+            let mut result = vec![];
+            for root in roots {
+                if store.is_valid_path(root.clone()).await? {
+                    result.push(root);
+                } else {
+                    eprintln!("Ignoring {:?}", root);
+                }
+            }
+            result
+        };
+
         // Compute closure
         let closure = if no_closure {
             roots
@@ -433,13 +445,18 @@ impl PushPlan {
                     let path_hash = path.to_hash();
 
                     async move {
-                        let path_info = store.query_path_info(path).await?;
-                        Ok((path_hash, path_info))
+                        // The watch logic is not infallible and we can get non-existent paths here.
+                        let opt_path_info = store.query_path_info(path).await?;
+                        Ok(opt_path_info.map(|path_info| (path_hash, path_info)))
                     }
                 })
                 .collect::<Vec<_>>();
 
-            join_all(futures).await.into_iter().collect::<Result<_>>()?
+            join_all(futures)
+                .await
+                .into_iter()
+                .filter_map(|r| r.transpose())
+                .collect::<Result<_>>()?
         };
 
         let num_all_paths = store_path_map.len();
@@ -520,7 +537,8 @@ pub async fn upload_path(
             .references
             .into_iter()
             .map(|pb| {
-                pb.to_str()
+                pb.as_os_str()
+                    .to_str()
                     .ok_or_else(|| anyhow!("Reference contains non-UTF-8"))
                     .map(|s| s.to_owned())
             })

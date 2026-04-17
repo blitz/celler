@@ -1,5 +1,6 @@
 //! High-level Nix Store interface.
 
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::str::FromStr as _;
@@ -152,41 +153,70 @@ impl NixStore {
         store_paths: Vec<StorePath>,
         include_outputs: bool,
     ) -> AtticResult<Vec<StorePath>> {
-        let to_store_path = |p: StorePath| self.store_dir().join(p.base_name);
+        let mut unqueried_paths: Vec<StorePath> = store_paths;
+        let mut result: BTreeSet<StorePath> = Default::default();
 
-        let child = Command::new("nix-store")
-            .arg("--query")
-            .arg("--requisites")
-            .args(include_outputs.then_some("--include-outputs"))
-            .arg("--")
-            .args(store_paths.into_iter().map(to_store_path))
-            .output()
-            .await?;
-
-        if !child.status.success() {
-            return Err(std::io::Error::other(format!(
-                "nix-store exited with {}",
-                child.status
-            )))?;
+        if include_outputs {
+            todo!("include_outputs is not implemented yet.")
         }
 
-        // TODO Better error handling
-        let output = str::from_utf8(&child.stdout).map_err(|_e| AtticError::InvalidStorePath {
-            path: Default::default(),
-            reason: "Invalid UTF-8 output from nix-store",
-        })?;
+        while let Some(unqueried_path) = unqueried_paths.pop() {
+            if !result.contains(&unqueried_path) {
+                // TODO It would be very cool to keep topological
+                // order, so we can push paths to the store in a sane
+                // order.
+                result.insert(unqueried_path.clone());
 
-        let paths: Vec<StorePath> = output
-            .lines()
-            .map(|l| -> AtticResult<StorePath> { self.parse_store_path(l) })
-            .collect::<AtticResult<Vec<_>>>()?;
+                let path_info = self
+                    .query_path_info(unqueried_path.clone())
+                    .await?
+                    .ok_or_else(|| AtticError::InvalidStorePath {
+                        path: unqueried_path.base_name,
+                        reason: "Missing reference",
+                    })?;
 
-        Ok(paths)
+                unqueried_paths.extend_from_slice(&path_info.references);
+            }
+        }
+
+        Ok(result.into_iter().collect())
+    }
+
+    /// Check whether a given store path is actually valid.
+    ///
+    /// This returns true, iff `query_path_info` would also have given
+    /// you a positive result.
+    pub async fn is_valid_path(&self, store_path: StorePath) -> AtticResult<bool> {
+        let mut daemon = self.daemon.lock().await;
+
+        Ok(daemon
+            .is_valid_path(
+                self.get_full_path(&store_path)
+                    .as_os_str()
+                    .to_str()
+                    .ok_or_else(|| AtticError::InvalidStorePath {
+                        path: store_path.base_name.clone(),
+                        reason: "Invalid UTF-8",
+                    })?,
+            )
+            .result()
+            .await
+            .inspect_err(|e| {
+                eprintln!(
+                    "Failed to query path, considering non-valid: {} {}",
+                    self.get_full_path(&store_path).display(),
+                    e
+                );
+            })
+            .unwrap_or(false))
     }
 
     /// Returns detailed information on a path.
-    pub async fn query_path_info(&self, store_path: StorePath) -> AtticResult<ValidPathInfo> {
-        let path_info = {
+    pub async fn query_path_info(
+        &self,
+        store_path: StorePath,
+    ) -> AtticResult<Option<ValidPathInfo>> {
+        let opt_path_info = {
             let full_store_path = self.get_full_path(&store_path);
             let full_store_path_str =
                 full_store_path
@@ -205,24 +235,24 @@ impl NixStore {
                     path: full_store_path.clone(),
                     reason: "Failed to query",
                 })?
-                .ok_or_else(|| AtticError::InvalidStorePath {
-                    path: full_store_path,
-                    reason: "Missing path",
-                })?
         };
 
-        Ok(ValidPathInfo {
-            path: store_path,
-            // TODO The documentation of PathInfo lies that the string has a sha256- prefix.
-            nar_hash: Hash::from_typed(&format!("sha256:{}", path_info.nar_hash))?,
-            nar_size: path_info.nar_size,
-            references: path_info
-                .references
-                .into_iter()
-                .map(|p| -> AtticResult<PathBuf> { Ok(self.parse_store_path(p)?.base_name) })
-                .collect::<AtticResult<Vec<_>>>()?,
-            sigs: path_info.signatures,
-            ca: path_info.ca,
-        })
+        opt_path_info
+            .map(|path_info| -> AtticResult<_> {
+                Ok(ValidPathInfo {
+                    path: store_path,
+                    // TODO The documentation of PathInfo lies that the string has a sha256- prefix.
+                    nar_hash: Hash::from_typed(&format!("sha256:{}", path_info.nar_hash))?,
+                    nar_size: path_info.nar_size,
+                    references: path_info
+                        .references
+                        .into_iter()
+                        .map(|p| -> AtticResult<StorePath> { self.parse_store_path(p) })
+                        .collect::<AtticResult<Vec<_>>>()?,
+                    sigs: path_info.signatures,
+                    ca: path_info.ca,
+                })
+            })
+            .transpose()
     }
 }

@@ -6,6 +6,7 @@ use clap::Parser;
 use indicatif::MultiProgress;
 use notify::{EventKind, RecursiveMode, Watcher};
 use tokio::sync::mpsc;
+use tokio_stream::{self as stream, StreamExt};
 
 use crate::api::ApiClient;
 use crate::cache::CacheRef;
@@ -101,16 +102,32 @@ pub async fn run(opts: Opts) -> Result<()> {
         match res {
             Ok(event) => {
                 // We watch the removals of lock files which signify
-                // store paths becoming valid
+                // store paths becoming valid.
+                //
+                // But just because the lock file was removed doesn't
+                // mean that the store path is actually valid. There
+                // are situation (aborting builds) that leave invalid
+                // store paths around. So we filter them out here
+                // before we fail deeper down the stack.
+                //
+                // TODO Concurrent removal of paths (garbage
+                // collection) can still result in errors.
                 if let EventKind::Remove(_) = event.kind {
-                    let paths = event
-                        .paths
-                        .iter()
-                        .filter_map(|p| {
-                            let base = strip_lock_file(p)?;
-                            store.parse_store_path(base).ok()
+                    let path_stream = stream::iter(event.paths);
+
+                    let path_stream = path_stream.filter_map(|p| {
+                        let base = strip_lock_file(&p)?;
+                        store.parse_store_path(base).ok()
+                    });
+
+                    let path_stream = path_stream
+                        .then(async |p| -> Result<Option<StorePath>> {
+                            Ok(store.is_valid_path(p.clone()).await?.then_some(p))
                         })
-                        .collect::<Vec<StorePath>>();
+                        .filter_map(|p: Result<Option<StorePath>>| p.transpose());
+
+                    let paths: Vec<StorePath> =
+                        path_stream.collect::<Result<Vec<StorePath>>>().await?;
 
                     if !paths.is_empty() {
                         session
