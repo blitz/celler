@@ -11,8 +11,10 @@ use tokio::io::AsyncWriteExt;
 
 pub mod test_nar;
 
-fn connect() -> NixStore {
-    NixStore::connect().expect("Failed to connect to the Nix store")
+async fn connect() -> NixStore {
+    NixStore::connect()
+        .await
+        .expect("Failed to connect to the Nix store")
 }
 
 /// Evaluates a Nix expression using the command-line interface.
@@ -53,14 +55,14 @@ fn assert_base_name_err(store: &str, path: &str, err: &str) {
     }
 }
 
-#[test]
-fn test_connect() {
-    connect();
+#[tokio::test]
+async fn test_connect() {
+    connect().await;
 }
 
-#[test]
-fn test_store_dir() {
-    let store = connect();
+#[tokio::test]
+async fn test_store_dir() {
+    let store = connect().await;
     let expected: PathBuf = cli_eval("builtins.storeDir");
     assert_eq!(store.store_dir(), expected);
 }
@@ -146,7 +148,9 @@ fn test_store_path_hash() {
 
 #[tokio::test]
 async fn test_nar_streaming() {
-    let store = NixStore::connect().expect("Failed to connect to the Nix store");
+    let store = NixStore::connect()
+        .await
+        .expect("Failed to connect to the Nix store");
 
     let test_nar = test_nar::NO_DEPS;
     test_nar.import().await.expect("Could not import test NAR");
@@ -171,7 +175,9 @@ async fn test_nar_streaming() {
 async fn test_compute_fs_closure() {
     use test_nar::{WITH_DEPS_A, WITH_DEPS_B, WITH_DEPS_C};
 
-    let store = NixStore::connect().expect("Failed to connect to the Nix store");
+    let store = NixStore::connect()
+        .await
+        .expect("Failed to connect to the Nix store");
 
     for nar in [WITH_DEPS_C, WITH_DEPS_B, WITH_DEPS_A] {
         nar.import().await.expect("Could not import test NAR");
@@ -195,7 +201,9 @@ async fn test_compute_fs_closure() {
 async fn test_compute_fs_closure_multi() {
     use test_nar::{NO_DEPS, WITH_DEPS_A, WITH_DEPS_B, WITH_DEPS_C};
 
-    let store = NixStore::connect().expect("Failed to connect to the Nix store");
+    let store = NixStore::connect()
+        .await
+        .expect("Failed to connect to the Nix store");
 
     for nar in [NO_DEPS, WITH_DEPS_C, WITH_DEPS_B, WITH_DEPS_A] {
         nar.import().await.expect("Could not import test NAR");
@@ -225,7 +233,9 @@ async fn test_compute_fs_closure_multi() {
 async fn test_query_path_info() {
     use test_nar::{WITH_DEPS_B, WITH_DEPS_C};
 
-    let store = NixStore::connect().expect("Failed to connect to the Nix store");
+    let store = NixStore::connect()
+        .await
+        .expect("Failed to connect to the Nix store");
 
     for nar in [WITH_DEPS_C, WITH_DEPS_B] {
         nar.import().await.expect("Could not import test NAR");
@@ -236,15 +246,17 @@ async fn test_query_path_info() {
     let path_info = store
         .query_path_info(path)
         .await
-        .expect("Could not query path info");
+        .expect("Could not query path info")
+        .unwrap();
 
     eprintln!("Path info: {:?}", path_info);
 
     assert_eq!(nar.nar().len() as u64, path_info.nar_size);
     assert_eq!(
-        vec![PathBuf::from(
+        vec![StorePath::from_base_name(
             "3k1wymic8p7h5pfcqfhh0jan8ny2a712-attic-test-with-deps-c-final"
-        ),],
+        )
+        .unwrap(),],
         path_info.references
     );
 }

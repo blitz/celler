@@ -15,7 +15,6 @@ hex.workspace = true
 lazy_static.workspace = true
 regex.workspace = true
 serde.workspace = true
-serde_json.workspace = true
 serde_with.workspace = true
 sha2.workspace = true
 
@@ -25,6 +24,7 @@ nix-base32 = "0.2.0"
 pin-project = "1.1.10"
 tempfile = "3"
 wildmatch = "2.4.0"
+nix-daemon = { git = "https://codeberg.org/blitz/gorgon.git", branch = "nix-daemon" }
 
 [dependencies.tokio]
 workspace = true

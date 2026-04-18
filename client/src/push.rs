@@ -26,7 +26,7 @@ use anyhow::{anyhow, Context as _, Result};
 use async_channel as channel;
 use bytes::Bytes;
 use futures::future::join_all;
-use futures::stream::{self, Stream, StreamExt, TryStreamExt};
+use futures::stream::{Stream, TryStreamExt};
 use indicatif::{HumanBytes, MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use tokio::sync::{mpsc, Mutex};
 use tokio::task::{spawn, JoinHandle};
@@ -417,6 +417,18 @@ impl PushPlan {
         no_closure: bool,
         ignore_upstream_filter: bool,
     ) -> Result<Self> {
+        let roots = {
+            let mut result = vec![];
+            for root in roots {
+                if store.is_valid_path(root.clone()).await? {
+                    result.push(root);
+                } else {
+                    eprintln!("Ignoring {:?}", root);
+                }
+            }
+            result
+        };
+
         // Compute closure
         let closure = if no_closure {
             roots
@@ -425,23 +437,26 @@ impl PushPlan {
         };
 
         let mut store_path_map: HashMap<StorePathHash, ValidPathInfo> = {
-            stream::iter(closure.iter().cloned())
+            let futures = closure
+                .iter()
                 .map(|path| {
                     let store = store.clone();
                     let path = path.clone();
                     let path_hash = path.to_hash();
 
                     async move {
-                        let path_info = store.query_path_info(path).await?;
-                        Ok::<_, anyhow::Error>((path_hash, path_info))
+                        // The watch logic is not infallible and we can get non-existent paths here.
+                        let opt_path_info = store.query_path_info(path).await?;
+                        Ok(opt_path_info.map(|path_info| (path_hash, path_info)))
                     }
                 })
-                // TODO While we shell out to the nix CLI to query path info,
-                // limit the total concurrency. Otherwise, we see the Nix daemon
-                // rejecting connections.
-                .buffer_unordered(10)
-                .try_collect()
-                .await?
+                .collect::<Vec<_>>();
+
+            join_all(futures)
+                .await
+                .into_iter()
+                .filter_map(|r| r.transpose())
+                .collect::<Result<_>>()?
         };
 
         let num_all_paths = store_path_map.len();
@@ -522,7 +537,8 @@ pub async fn upload_path(
             .references
             .into_iter()
             .map(|pb| {
-                pb.to_str()
+                pb.as_os_str()
+                    .to_str()
                     .ok_or_else(|| anyhow!("Reference contains non-UTF-8"))
                     .map(|s| s.to_owned())
             })

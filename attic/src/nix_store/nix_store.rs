@@ -1,14 +1,18 @@
 //! High-level Nix Store interface.
 
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
-use std::str::FromStr;
+use std::str::FromStr as _;
+use std::sync::Arc;
 
 use async_stream::try_stream;
 use futures::Stream;
-use serde::Deserialize;
+use nix_daemon::{Progress, Store};
 use tokio::io::AsyncReadExt;
+use tokio::net::UnixStream;
 use tokio::process::Command;
+use tokio::sync::Mutex;
 
 use super::{to_base_name, StorePath, ValidPathInfo};
 use crate::error::AtticResult;
@@ -17,32 +21,23 @@ use crate::AtticError;
 
 /// High-level wrapper for the Unix Domain Socket Nix Store.
 pub struct NixStore {
+    daemon: Arc<Mutex<nix_daemon::nix::DaemonStore<UnixStream>>>,
+
     /// Path to the Nix store itself.
     store_dir: PathBuf,
 }
 
-/// The output of `nix path-info --json`.
-#[derive(Debug, Clone, Deserialize)]
-struct NixPathInfoJson {
-    // Depending on the Nix version this might or might not be there.
-    path: Option<PathBuf>,
-
-    #[serde(rename = "narHash")]
-    nar_hash: String,
-
-    #[serde(rename = "narSize")]
-    nar_size: u64,
-
-    #[serde(default)]
-    references: Vec<PathBuf>,
-
-    #[serde(default)]
-    signatures: Vec<String>,
-}
-
 impl NixStore {
-    pub fn connect() -> AtticResult<Self> {
+    pub async fn connect() -> AtticResult<Self> {
         Ok(Self {
+            daemon: Arc::new(Mutex::new(
+                nix_daemon::nix::DaemonStore::builder()
+                    .connect_unix("/nix/var/nix/daemon-socket/socket")
+                    .await
+                    .map_err(|e| AtticError::StoreConnectError {
+                        reason: e.to_string(),
+                    })?,
+            )),
             // TODO: Make this method async and call nix-instantiate --raw --eval -E 'builtins.storeDir'
             store_dir: PathBuf::from_str("/nix/store").unwrap(),
         })
@@ -88,14 +83,14 @@ impl NixStore {
     ///
     /// The path must be under the store directory. See `follow_store_path`
     /// for an alternative that follows symlinks.
-    pub fn parse_store_path<P: AsRef<Path>>(&self, path: P) -> AtticResult<StorePath> {
+    pub fn parse_store_path(&self, path: impl AsRef<Path>) -> AtticResult<StorePath> {
         let base_name = to_base_name(&self.store_dir, path.as_ref())?;
         StorePath::from_base_name(base_name)
     }
 
     /// Returns the full path for a base store path.
-    pub fn get_full_path(&self, store_path: &StorePath) -> PathBuf {
-        self.store_dir.join(&store_path.base_name)
+    pub fn get_full_path(&self, store_path: impl AsRef<StorePath>) -> PathBuf {
+        self.store_dir.join(&store_path.as_ref().base_name)
     }
 
     /// Creates a NAR archive from a path.
@@ -103,9 +98,9 @@ impl NixStore {
     /// This is akin to `nix-store --dump`.
     pub fn nar_from_path(
         &self,
-        store_path: StorePath,
+        store_path: impl AsRef<StorePath>,
     ) -> impl Stream<Item = AtticResult<Vec<u8>>> + Unpin + Send {
-        let full_path = self.get_full_path(&store_path);
+        let full_path = self.get_full_path(store_path);
         Box::pin(try_stream! {
             let mut child = Command::new("nix-store")
                 .arg("--dump")
@@ -158,99 +153,106 @@ impl NixStore {
         store_paths: Vec<StorePath>,
         include_outputs: bool,
     ) -> AtticResult<Vec<StorePath>> {
-        let to_store_path = |p: StorePath| self.store_dir().join(p.base_name);
+        let mut unqueried_paths: Vec<StorePath> = store_paths;
+        let mut result: BTreeSet<StorePath> = Default::default();
 
-        let child = Command::new("nix-store")
-            .arg("--query")
-            .arg("--requisites")
-            .args(include_outputs.then_some("--include-outputs"))
-            .arg("--")
-            .args(store_paths.into_iter().map(to_store_path))
-            .output()
-            .await?;
-
-        if !child.status.success() {
-            return Err(std::io::Error::other(format!(
-                "nix-store exited with {}",
-                child.status
-            )))?;
+        if include_outputs {
+            todo!("include_outputs is not implemented yet.")
         }
 
-        // TODO Better error handling
-        let output = str::from_utf8(&child.stdout).map_err(|_e| AtticError::InvalidStorePath {
-            path: Default::default(),
-            reason: "Invalid UTF-8 output from nix-store",
-        })?;
+        while let Some(unqueried_path) = unqueried_paths.pop() {
+            if !result.contains(&unqueried_path) {
+                // TODO It would be very cool to keep topological
+                // order, so we can push paths to the store in a sane
+                // order.
+                result.insert(unqueried_path.clone());
 
-        let paths: Vec<StorePath> = output
-            .lines()
-            .map(|l| -> AtticResult<StorePath> { self.parse_store_path(l) })
-            .collect::<AtticResult<Vec<_>>>()?;
+                let path_info = self
+                    .query_path_info(&unqueried_path)
+                    .await?
+                    .ok_or_else(|| AtticError::InvalidStorePath {
+                        path: unqueried_path.base_name,
+                        reason: "Missing reference",
+                    })?;
 
-        Ok(paths)
+                unqueried_paths.extend_from_slice(&path_info.references);
+            }
+        }
+
+        Ok(result.into_iter().collect())
+    }
+
+    /// Check whether a given store path is actually valid.
+    ///
+    /// This returns true, iff `query_path_info` would also have given
+    /// you a positive result.
+    pub async fn is_valid_path(&self, store_path: impl AsRef<StorePath>) -> AtticResult<bool> {
+        let mut daemon = self.daemon.lock().await;
+
+        Ok(daemon
+            .is_valid_path(
+                self.get_full_path(&store_path)
+                    .as_os_str()
+                    .to_str()
+                    .ok_or_else(|| AtticError::InvalidStorePath {
+                        path: store_path.as_ref().base_name.clone(),
+                        reason: "Invalid UTF-8",
+                    })?,
+            )
+            .result()
+            .await
+            .inspect_err(|e| {
+                eprintln!(
+                    "Failed to query path, considering non-valid: {} {}",
+                    self.get_full_path(&store_path).display(),
+                    e
+                );
+            })
+            .unwrap_or(false))
     }
 
     /// Returns detailed information on a path.
-    pub async fn query_path_info(&self, store_path: StorePath) -> AtticResult<ValidPathInfo> {
-        let full_store_path = self.store_dir().join(&store_path.base_name);
-        let child = Command::new("nix")
-            .arg("--experimental-features")
-            .arg("nix-command")
-            .arg("path-info")
-            .arg("--json")
-            .arg("--")
-            .arg(&full_store_path)
-            .stderr(Stdio::piped())
-            .output()
-            .await?;
+    pub async fn query_path_info(
+        &self,
+        store_path: impl AsRef<StorePath>,
+    ) -> AtticResult<Option<ValidPathInfo>> {
+        let opt_path_info = {
+            let full_store_path = self.get_full_path(&store_path);
+            let full_store_path_str =
+                full_store_path
+                    .to_str()
+                    .ok_or_else(|| AtticError::InvalidStorePath {
+                        path: full_store_path.clone(),
+                        reason: "Invalid UTF-8",
+                    })?;
 
-        if !child.status.success() {
-            return Err(std::io::Error::other(format!(
-                "nix path-info {} exited with {}: {}",
-                full_store_path.display(),
-                child.status,
-                str::from_utf8(&child.stderr).unwrap_or("(invalid UTF-8)")
-            )))?;
-        }
-
-        //eprintln!("{}", str::from_utf8(&child.stdout).unwrap());
-
-        let path_info: serde_json::Value = serde_json::from_slice(&child.stdout)?;
-
-        // We have three cases here depending on the Nix version! This is kind
-        // of ugly, because we tried to be Nix version agnostic.
-        //
-        // TODO Find a better way to handle this.
-        //
-        // Either:
-        // 1. The output is a single object (e.g. `{"path": ...}`)
-        // 2. The output is an array of objects (e.g. `[{"path": ...}]`)
-        // 3. The output is a JSON object with a single key (e.g. `{"/nix/store/...": {"path": ...}}`)
-
-        let path_info: NixPathInfoJson = if path_info.is_array() {
-            serde_json::from_value(path_info[0].clone())?
-        } else if path_info.is_object() {
-            let key = path_info.as_object().unwrap().keys().next().unwrap();
-            let mut path_info: NixPathInfoJson = serde_json::from_value(path_info[key].clone())?;
-            path_info.path = Some(key.clone().into());
-            path_info
-        } else {
-            serde_json::from_value(path_info)?
+            let mut daemon = self.daemon.lock().await;
+            daemon
+                .query_pathinfo(full_store_path_str)
+                .result()
+                .await
+                .map_err(|_e| AtticError::InvalidStorePath {
+                    path: full_store_path.clone(),
+                    reason: "Failed to query",
+                })?
         };
 
-        Ok(ValidPathInfo {
-            path: self.parse_store_path(path_info.path.unwrap())?,
-            nar_hash: Hash::from_sri(&path_info.nar_hash)?,
-            nar_size: path_info.nar_size,
-            references: path_info
-                .references
-                .into_iter()
-                .map(|p| -> AtticResult<PathBuf> { Ok(self.parse_store_path(p)?.base_name) })
-                .collect::<AtticResult<Vec<_>>>()?,
-            sigs: path_info.signatures,
-
-            // TODO Remove the ca field across the codebase.
-            ca: None,
-        })
+        opt_path_info
+            .map(|path_info| -> AtticResult<_> {
+                Ok(ValidPathInfo {
+                    path: store_path.as_ref().to_owned(),
+                    // TODO The documentation of PathInfo lies that the string has a sha256- prefix.
+                    nar_hash: Hash::from_typed(&format!("sha256:{}", path_info.nar_hash))?,
+                    nar_size: path_info.nar_size,
+                    references: path_info
+                        .references
+                        .into_iter()
+                        .map(|p| -> AtticResult<StorePath> { self.parse_store_path(p) })
+                        .collect::<AtticResult<Vec<_>>>()?,
+                    sigs: path_info.signatures,
+                    ca: path_info.ca,
+                })
+            })
+            .transpose()
     }
 }

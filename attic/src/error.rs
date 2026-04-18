@@ -11,6 +11,9 @@ pub type AtticResult<T> = Result<T, AtticError>;
 /// An error.
 #[derive(Debug, Display)]
 pub enum AtticError {
+    /// Failed to connect to the Nix store: {reason}
+    StoreConnectError { reason: String },
+
     /// Invalid store path {path:?}: {reason}
     InvalidStorePath { path: PathBuf, reason: &'static str },
 
@@ -34,14 +37,12 @@ pub enum AtticError {
 
     /// I/O error: {error}.
     IoError { error: io::Error },
-
-    /// Invalid path info: {error}
-    InvalidPathInfo { error: serde_json::Error },
 }
 
 impl AtticError {
     pub fn name(&self) -> &'static str {
         match self {
+            Self::StoreConnectError { .. } => "StoreConnectError",
             Self::InvalidStorePath { .. } => "InvalidStorePath",
             Self::InvalidStorePathName { .. } => "InvalidStorePathName",
             Self::InvalidStorePathHash { .. } => "InvalidStorePathHash",
@@ -49,7 +50,6 @@ impl AtticError {
             Self::SigningError(_) => "SigningError",
             Self::HashError(_) => "HashError",
             Self::IoError { .. } => "IoError",
-            Self::InvalidPathInfo { .. } => "InvalidPathInfo",
         }
     }
 }
@@ -71,11 +71,5 @@ impl From<super::signing::Error> for AtticError {
 impl From<super::hash::Error> for AtticError {
     fn from(error: super::hash::Error) -> Self {
         Self::HashError(error)
-    }
-}
-
-impl From<serde_json::Error> for AtticError {
-    fn from(error: serde_json::Error) -> Self {
-        Self::InvalidPathInfo { error }
     }
 }

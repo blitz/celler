@@ -3,16 +3,18 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use anyhow::{anyhow, Result};
+use attic::AtticResult;
 use clap::Parser;
 use indicatif::MultiProgress;
 use tokio::io::{self, AsyncBufReadExt, BufReader};
+use tokio_stream::{self as stream, StreamExt};
 
 use crate::api::ApiClient;
 use crate::cache::{CacheName, CacheRef, ServerName};
 use crate::cli::Opts;
 use crate::config::Config;
 use crate::push::{PushConfig, PushSessionConfig, Pusher};
-use attic::nix_store::NixStore;
+use attic::nix_store::{NixStore, StorePath};
 
 /// Push closures to a binary cache.
 #[derive(Debug, Parser)]
@@ -68,10 +70,31 @@ impl PushContext {
             return Ok(());
         }
 
-        let roots = paths
-            .into_iter()
+        let paths = stream::iter(paths)
             .map(|p| self.store.follow_store_path(p))
-            .collect::<std::result::Result<Vec<_>, _>>()?;
+            .then(
+                async |p: AtticResult<StorePath>| -> AtticResult<Option<_>> {
+                    match p {
+                        Ok(store_path) => {
+                            Ok(if self.store.is_valid_path(store_path.clone()).await? {
+                                Some(store_path)
+                            } else {
+                                eprintln!(
+                                    "❗️ Skipping invalid path: {}",
+                                    self.store.get_full_path(&store_path).display()
+                                );
+
+                                None
+                            })
+                        }
+                        Err(e) => Err(e),
+                    }
+                },
+            );
+        let roots = paths
+            .filter_map(|opt_p| opt_p.transpose())
+            .collect::<std::result::Result<Vec<_>, _>>()
+            .await?;
 
         let plan = self
             .pusher
@@ -124,6 +147,14 @@ impl PushContext {
             }
 
             let path = self.store.follow_store_path(line)?;
+            if !self.store.is_valid_path(path.clone()).await? {
+                eprintln!(
+                    "❗️ Skipping invalid path: {}",
+                    self.store.get_full_path(&path).display()
+                );
+                continue;
+            }
+
             session.queue_many(vec![path])?;
         }
 
@@ -142,7 +173,7 @@ pub async fn run(opts: Opts) -> Result<()> {
 
     let config = Config::load()?;
 
-    let store = Arc::new(NixStore::connect()?);
+    let store = Arc::new(NixStore::connect().await?);
 
     let (server_name, server, cache_name) = config.resolve_cache(&sub.cache)?;
 

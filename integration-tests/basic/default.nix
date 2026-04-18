@@ -171,6 +171,10 @@ in {
 
       client = {
         environment.systemPackages = [ pkgs.celler ];
+
+        # Otherwise the test log is spammed with
+        # warning: error: unable to download 'https://cache.nixos.org/nix-cache-info': ...
+        nix.settings.substituters = lib.mkForce [ ];
       };
     };
 
