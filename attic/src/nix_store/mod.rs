@@ -212,6 +212,12 @@ impl StorePath {
     }
 }
 
+impl AsRef<StorePath> for StorePath {
+    fn as_ref(&self) -> &StorePath {
+        self
+    }
+}
+
 impl StorePathHash {
     /// Creates a store path hash from a string.
     pub fn new(hash: String) -> AtticResult<Self> {

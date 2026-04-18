@@ -89,8 +89,8 @@ impl NixStore {
     }
 
     /// Returns the full path for a base store path.
-    pub fn get_full_path(&self, store_path: &StorePath) -> PathBuf {
-        self.store_dir.join(&store_path.base_name)
+    pub fn get_full_path(&self, store_path: impl AsRef<StorePath>) -> PathBuf {
+        self.store_dir.join(&store_path.as_ref().base_name)
     }
 
     /// Creates a NAR archive from a path.
@@ -98,9 +98,9 @@ impl NixStore {
     /// This is akin to `nix-store --dump`.
     pub fn nar_from_path(
         &self,
-        store_path: StorePath,
+        store_path: impl AsRef<StorePath>,
     ) -> impl Stream<Item = AtticResult<Vec<u8>>> + Unpin + Send {
-        let full_path = self.get_full_path(&store_path);
+        let full_path = self.get_full_path(store_path);
         Box::pin(try_stream! {
             let mut child = Command::new("nix-store")
                 .arg("--dump")
@@ -168,7 +168,7 @@ impl NixStore {
                 result.insert(unqueried_path.clone());
 
                 let path_info = self
-                    .query_path_info(unqueried_path.clone())
+                    .query_path_info(&unqueried_path)
                     .await?
                     .ok_or_else(|| AtticError::InvalidStorePath {
                         path: unqueried_path.base_name,
@@ -186,7 +186,7 @@ impl NixStore {
     ///
     /// This returns true, iff `query_path_info` would also have given
     /// you a positive result.
-    pub async fn is_valid_path(&self, store_path: StorePath) -> AtticResult<bool> {
+    pub async fn is_valid_path(&self, store_path: impl AsRef<StorePath>) -> AtticResult<bool> {
         let mut daemon = self.daemon.lock().await;
 
         Ok(daemon
@@ -195,7 +195,7 @@ impl NixStore {
                     .as_os_str()
                     .to_str()
                     .ok_or_else(|| AtticError::InvalidStorePath {
-                        path: store_path.base_name.clone(),
+                        path: store_path.as_ref().base_name.clone(),
                         reason: "Invalid UTF-8",
                     })?,
             )
@@ -214,7 +214,7 @@ impl NixStore {
     /// Returns detailed information on a path.
     pub async fn query_path_info(
         &self,
-        store_path: StorePath,
+        store_path: impl AsRef<StorePath>,
     ) -> AtticResult<Option<ValidPathInfo>> {
         let opt_path_info = {
             let full_store_path = self.get_full_path(&store_path);
@@ -240,7 +240,7 @@ impl NixStore {
         opt_path_info
             .map(|path_info| -> AtticResult<_> {
                 Ok(ValidPathInfo {
-                    path: store_path,
+                    path: store_path.as_ref().to_owned(),
                     // TODO The documentation of PathInfo lies that the string has a sha256- prefix.
                     nar_hash: Hash::from_typed(&format!("sha256:{}", path_info.nar_hash))?,
                     nar_size: path_info.nar_size,
