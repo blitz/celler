@@ -83,7 +83,7 @@ impl NixStore {
     ///
     /// The path must be under the store directory. See `follow_store_path`
     /// for an alternative that follows symlinks.
-    pub fn parse_store_path<P: AsRef<Path>>(&self, path: P) -> AtticResult<StorePath> {
+    pub fn parse_store_path(&self, path: impl AsRef<Path>) -> AtticResult<StorePath> {
         let base_name = to_base_name(&self.store_dir, path.as_ref())?;
         StorePath::from_base_name(base_name)
     }
