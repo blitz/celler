@@ -1,5 +1,7 @@
 //! A binary cache.
 
+use std::str::FromStr as _;
+
 use sea_orm::entity::prelude::*;
 
 use super::Json;

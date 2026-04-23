@@ -21,7 +21,7 @@
 //! `Serialize` and `Deserialize` are implemented to convert the structs
 //! from and to the canonical format.
 
-use std::convert::TryInto;
+use std::{convert::TryInto, str::FromStr};
 
 use serde::{de, ser, Deserialize, Serialize};
 
@@ -29,7 +29,7 @@ use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, DecodeError, 
 use displaydoc::Display;
 use ed25519_compact::{Error as SignatureError, KeyPair, PublicKey, Signature};
 
-use crate::error::AtticResult;
+use crate::{AtticError, error::AtticResult};
 
 #[cfg(test)]
 mod tests;
@@ -92,6 +92,22 @@ pub enum Error {
     InvalidSigningKeyName(String),
 }
 
+impl FromStr for NixKeypair {
+    type Err = AtticError;
+
+    /// Imports an existing keypair from its canonical representation.
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (name, bytes) = decode_string(s, "keypair", KeyPair::BYTES, None)?;
+
+        let keypair = KeyPair::from_slice(&bytes).map_err(Error::SignatureError)?;
+
+        Ok(Self {
+            name: name.to_string(),
+            keypair,
+        })
+    }
+}
+
 impl NixKeypair {
     /// Generates a new keypair.
     pub fn generate(name: &str) -> AtticResult<Self> {
@@ -99,18 +115,6 @@ impl NixKeypair {
         let keypair = KeyPair::generate();
 
         validate_name(name)?;
-
-        Ok(Self {
-            name: name.to_string(),
-            keypair,
-        })
-    }
-
-    /// Imports an existing keypair from its canonical representation.
-    pub fn from_str(keypair: &str) -> AtticResult<Self> {
-        let (name, bytes) = decode_string(keypair, "keypair", KeyPair::BYTES, None)?;
-
-        let keypair = KeyPair::from_slice(&bytes).map_err(Error::SignatureError)?;
 
         Ok(Self {
             name: name.to_string(),
@@ -187,10 +191,12 @@ impl Serialize for NixKeypair {
     }
 }
 
-impl NixPublicKey {
+impl FromStr for NixPublicKey {
+    type Err = AtticError;
+
     /// Imports an existing public key from its canonical representation.
-    pub fn from_str(public_key: &str) -> AtticResult<Self> {
-        let (name, bytes) = decode_string(public_key, "public key", PublicKey::BYTES, None)?;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (name, bytes) = decode_string(s, "public key", PublicKey::BYTES, None)?;
 
         let public = PublicKey::from_slice(&bytes).map_err(Error::SignatureError)?;
 
@@ -199,7 +205,9 @@ impl NixPublicKey {
             public,
         })
     }
+}
 
+impl NixPublicKey {
     /// Returns the Nix-compatible textual representation of the public key.
     ///
     /// For example, it can look like:

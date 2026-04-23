@@ -3,7 +3,7 @@
 //! We automatically edit the user's `nix.conf` to add new
 //! binary caches while trying to keep the formatting intact.
 
-use std::path::PathBuf;
+use std::{path::PathBuf, str::FromStr};
 
 use anyhow::{anyhow, Result};
 use lazy_static::lazy_static;
@@ -53,6 +53,17 @@ enum Line {
     },
 }
 
+impl std::fmt::Display for NixConfig {
+    /// Reserialize the configuration back to a string.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", self.lines
+            .iter()
+            .map(|l| l.to_string())
+            .collect::<Vec<_>>()
+            .join("\n"))
+    }
+}
+
 impl NixConfig {
     pub async fn load() -> Result<Self> {
         let nix_base = BaseDirectories::with_prefix("nix");
@@ -79,15 +90,6 @@ impl NixConfig {
         } else {
             Err(anyhow!("Don't know how to save the nix.conf"))
         }
-    }
-
-    /// Reserialize the configuration back to a string.
-    pub fn to_string(&self) -> String {
-        self.lines
-            .iter()
-            .map(|l| l.to_string())
-            .collect::<Vec<_>>()
-            .join("\n")
     }
 
     /// Adds a new substituter.
@@ -142,16 +144,27 @@ impl NixConfig {
     }
 }
 
-impl Line {
-    fn from_lines(s: &str) -> Result<Vec<Self>> {
-        let mut lines: Vec<Line> = Vec::new();
-
-        for line in s.lines() {
-            lines.push(Line::from_str(line)?);
+impl std::fmt::Display for Line {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Comment(l) => write!(f, "{}", l),
+            Self::KV {
+                key,
+                value,
+                whitespace_s,
+                whitespace_l,
+                whitespace_r,
+                comment,
+            } => {
+                let cmt = comment.as_deref().unwrap_or("");
+                write!(f, "{whitespace_s}{key}{whitespace_l}={whitespace_r}{value}{cmt}")
+            }
         }
-
-        Ok(lines)
     }
+}
+
+impl FromStr for Line {
+    type Err = anyhow::Error;
 
     fn from_str(line: &str) -> Result<Self> {
         if COMMENT_LINE.is_match(line) {
@@ -171,22 +184,17 @@ impl Line {
 
         Err(anyhow!("Line \"{}\" isn't valid", line))
     }
+}
 
-    fn to_string(&self) -> String {
-        match self {
-            Self::Comment(l) => l.clone(),
-            Self::KV {
-                key,
-                value,
-                whitespace_s,
-                whitespace_l,
-                whitespace_r,
-                comment,
-            } => {
-                let cmt = comment.as_deref().unwrap_or("");
-                format!("{whitespace_s}{key}{whitespace_l}={whitespace_r}{value}{cmt}")
-            }
+impl Line {
+    fn from_lines(s: &str) -> Result<Vec<Self>> {
+        let mut lines: Vec<Line> = Vec::new();
+
+        for line in s.lines() {
+            lines.push(Line::from_str(line)?);
         }
+
+        Ok(lines)
     }
 
     fn kv(key: String, value: String) -> Self {

@@ -39,6 +39,7 @@
 //! [libnixstore-c](https://github.com/andir/libnixstore-c). It offers
 //! very limited amount of functionality.
 
+#[allow(clippy::module_inception)]
 mod nix_store;
 
 use std::ffi::OsStr;
@@ -157,7 +158,7 @@ impl StorePath {
 
         if !STORE_BASE_NAME_REGEX.is_match(s) {
             return Err(AtticError::InvalidStorePathName {
-                base_name: base_name,
+                base_name,
                 reason: "Name is of invalid format",
             });
         }
@@ -218,6 +219,12 @@ impl AsRef<StorePath> for StorePath {
     }
 }
 
+impl std::fmt::Display for StorePathHash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 impl StorePathHash {
     /// Creates a store path hash from a string.
     pub fn new(hash: String) -> AtticResult<Self> {
@@ -250,10 +257,6 @@ impl StorePathHash {
 
     pub fn as_str(&self) -> &str {
         &self.0
-    }
-
-    pub fn to_string(&self) -> String {
-        self.0.clone()
     }
 }
 

@@ -28,6 +28,7 @@ fn test_basic() {
       }
     */
 
+    #[allow(clippy::type_complexity)]
     let tokens: &[(&str, Box<dyn Fn() -> Token>)] = &[
         (
             "hs256",

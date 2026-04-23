@@ -272,6 +272,7 @@ impl StorageBackend for S3Backend {
             part_number += 1;
         }
 
+        #[allow(clippy::result_large_err)]
         let completed_parts = join_all(parts)
             .await
             .into_iter()

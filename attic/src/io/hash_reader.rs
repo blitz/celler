@@ -66,6 +66,7 @@ where
     R: AsyncRead + Unpin,
     D: Digest + Unpin,
 {
+    #[allow(clippy::type_complexity)]
     pub fn new(inner: R, digest: D) -> (Self, Arc<OnceCell<(DigestOutput<D>, usize)>>) {
         let finalized = Arc::new(OnceCell::new());
 
@@ -158,7 +159,7 @@ mod tests {
         assert!(finalized.get().is_none());
 
         // force multiple reads
-        let mut buf = vec![0u8; 100];
+        let mut buf = [0u8; 100];
         let mut bytes_read = 0;
         bytes_read += read
             .read(&mut buf[bytes_read..bytes_read + 5])
@@ -197,7 +198,7 @@ mod tests {
         let (mut read, finalized) = HashReader::new(expected.as_slice(), sha2::Sha256::new());
         assert!(finalized.get().is_none());
 
-        let mut buf = vec![0u8; 100];
+        let mut buf = [0u8; 100];
         let mut bytes_read = 0;
 
         // Mix AsyncRead::read() and AsyncBufRead::fill_buf()

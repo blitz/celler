@@ -4,14 +4,8 @@
 { stdenv
 , lib
 , craneLib
-, pkg-config
 , installShellFiles
 , jq
-
-, nix
-, boost
-, libarchive
-
 }:
 
 let

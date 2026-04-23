@@ -170,7 +170,7 @@ impl NixStore {
                 let path_info = self
                     .query_path_info(&unqueried_path)
                     .await?
-                    .ok_or_else(|| AtticError::InvalidStorePath {
+                    .ok_or(AtticError::InvalidStorePath {
                         path: unqueried_path.base_name,
                         reason: "Missing reference",
                     })?;

@@ -37,6 +37,7 @@ pub async fn run_oobe() -> Result<()> {
     let database_url = format!("sqlite://{}", database_path.to_str().unwrap());
     OpenOptions::new()
         .create(true)
+        .truncate(false)
         .write(true)
         .open(&database_path)
         .await?;
