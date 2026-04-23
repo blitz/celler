@@ -12,7 +12,7 @@ use crate::error::ServerResult;
 use crate::{RequestState, State};
 
 /// Auth state.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct AuthState {
     /// The JWT token.
     pub token: OnceCell<Token>,

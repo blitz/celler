@@ -1,6 +1,7 @@
 use std::io::Cursor;
+use std::hint::black_box;
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use futures::StreamExt;
 
 use attic::chunking::chunk_stream;

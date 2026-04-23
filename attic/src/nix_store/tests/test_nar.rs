@@ -119,7 +119,7 @@ impl TestNar {
         let output = child.wait_with_output().await?;
         if !output.status.success() {
             let e = format!("Nix exit with code {:?}", output.status.code());
-            return Err(io::Error::new(io::ErrorKind::Other, e));
+            return Err(io::Error::other(e));
         }
 
         // ensure that we imported the correct thing
@@ -130,7 +130,7 @@ impl TestNar {
                 "Import resulted in \"{}\", but we want \"{}\"",
                 store_path, self.store_path
             );
-            return Err(io::Error::new(io::ErrorKind::Other, e));
+            return Err(io::Error::other(e));
         }
 
         Ok(())
@@ -207,6 +207,7 @@ impl NarDump {
         if bytes != self.expected.nar {
             assert_eq!(bytes.len(), self.expected.nar.len());
 
+            #[allow(clippy::needless_range_loop)]
             for i in 0..bytes.len() {
                 if bytes[i] != self.expected.nar[i] {
                     eprintln!(

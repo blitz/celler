@@ -80,6 +80,7 @@ impl NixNetrc {
 
             let mut file = OpenOptions::new()
                 .create(true)
+                .truncate(false)
                 .write(true)
                 .mode(FILE_MODE)
                 .open(path)

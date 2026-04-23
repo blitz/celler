@@ -68,6 +68,12 @@ pub struct CacheNamePattern {
     matcher: Option<WildMatch>,
 }
 
+impl std::fmt::Display for CacheName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 impl CacheName {
     /// Creates a cache name from a String.
     pub fn new(name: String) -> AtticResult<Self> {
@@ -78,10 +84,6 @@ impl CacheName {
     /// Returns the string.
     pub fn as_str(&self) -> &str {
         &self.0
-    }
-
-    pub fn to_string(&self) -> String {
-        self.0.clone()
     }
 
     /// Returns the corresponding pattern that only matches this cache.

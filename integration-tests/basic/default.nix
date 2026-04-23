@@ -1,4 +1,4 @@
-{ pkgs, lib, config, flake, celler, ... }:
+{ pkgs, lib, config, flake, ... }:
 let
   inherit (lib) types;
 
