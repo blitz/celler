@@ -261,8 +261,9 @@ async fn get_nar(
 
         // TODO: Make num_prefetch configurable
         // The ideal size depends on the average chunk size
-        let merged = merge_chunks(chunks, streamer, storage, 10).map_err(|e| {
-            tracing::error!(%e, "Merging chunks failed");
+        let path_for_error = path.clone();
+        let merged = merge_chunks(chunks, streamer, storage, 2).map_err(move |e| {
+            tracing::error!(%e, path = %path_for_error, "Merging chunks failed");
             e
         });
         let body = Body::from_stream(merged);
