@@ -604,7 +604,7 @@ pub async fn upload_path(
                     let seconds = elapsed.as_secs_f64();
                     let speed = (path_info.nar_size as f64 / seconds) as u64;
 
-                    let mut s = format!("{}/s", HumanBytes(speed));
+                    let mut s = format!("{}, {}/s", HumanBytes(path_info.nar_size), HumanBytes(speed));
 
                     if let Some(frac_deduplicated) = r.frac_deduplicated {
                         if frac_deduplicated > 0.01f64 {
