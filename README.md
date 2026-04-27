@@ -3,21 +3,32 @@
 **Celler** is a self-hostable Nix Binary Cache server backed by an S3-compatible storage provider.
 It has support for global deduplication and garbage collection.
 
-Celler is an early prototype.
+## Relationship to Attic
 
-```
-⚙️ Pushing 5 paths to "demo" on "local" (566 already cached, 2001 in upstream)...
-✅ gnvi1x7r8kl3clzx0d266wi82fgyzidv-steam-run-fhs (29.69 MiB/s)
-✅ rw7bx7ak2p02ljm3z4hhpkjlr8rzg6xz-steam-fhs (30.56 MiB/s)
-✅ y92f9y7qhkpcvrqhzvf6k40j6iaxddq8-0p36ammvgyr55q9w75845kw4fw1c65ln-source (19.96 MiB/s)
-🕒 vscode-1.74.2        ███████████████████████████████████████  345.66 MiB (41.32 MiB/s)
-🕓 zoom-5.12.9.367      ███████████████████████████              329.36 MiB (39.47 MiB/s)
-```
+Celler is a fork of [Attic](https://github.com/zhaofengli/attic). We
+love Attic for its design, clear code and ease-of-use, but found it
+lacking for production setups. The current delta to between Celler and
+Attic is:
+
+- ✅ Updated all dependencies.
+- ✅ Remove C++ bindings to `libnixstore`.
+- ✅ Removed
+- 🚧 Use pure Rust code to talk to the Nix daemon. (Not completed.)
+
+We are also interested in the following features and will work on them
+as time permits.
+
+- Prometheus Metrics for requests, duration of requests, NAR file size, chunk size, etc.
+- Request logging
+- Integration into Single-Sign On via OpenID Connect.
+
+We are also open to contributions. In case you want to contribute a
+major feature, please involve us in the design!
 
 ## Try it out (15 minutes)
 
-Let's [spin up Celler](https://github.com/blitz/celler) in just 15 minutes.
-And yes, it works on macOS too!
+Let's [spin up Celler](https://celler.x86.lol/tutorial.html) in just
+15 minutes. And yes, it works on macOS too!
 
 ## Goals
 
@@ -33,3 +44,9 @@ Celler is available under the **Apache License, Version 2.0**.
 See `LICENSE` for details.
 
 By contributing to the project, you agree to license your work under the aforementioned license.
+
+## Contact
+
+Chat with us on Matrix: [#ctrl-os:cyberus-technology.de](https://matrix.to/#/#ctrl-os:cyberus-technology.de)
+
+For commercial support, reach out to [Cyberus Technology](https://ctrl-os.com/).
