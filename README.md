@@ -13,7 +13,7 @@ Attic is:
 - ✅ Updated all dependencies.
 - ✅ Remove C++ bindings to `libnixstore`.
 - ✅ Simplified Nix and CI setup
-- 🚧 Use pure Rust code to talk to the Nix daemon. (Not completed.)
+- ✅ Use pure Rust code to talk to the Nix daemon.
 
 We are also interested in the following features and will work on them
 as time permits.
