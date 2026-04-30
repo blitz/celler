@@ -2,16 +2,12 @@
 
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
-use std::process::Stdio;
 use std::str::FromStr as _;
 use std::sync::Arc;
 
-use async_stream::try_stream;
-use futures::Stream;
+use futures::{Stream, StreamExt, stream};
 use nix_daemon::{Progress, Store};
-use tokio::io::AsyncReadExt;
 use tokio::net::UnixStream;
-use tokio::process::Command;
 use tokio::sync::Mutex;
 
 use super::{to_base_name, StorePath, ValidPathInfo};
@@ -27,17 +23,20 @@ pub struct NixStore {
     store_dir: PathBuf,
 }
 
+const DAEMON_SOCKET_PATH: &str = "/nix/var/nix/daemon-socket/socket";
+
+async fn daemon_connect() -> AtticResult<nix_daemon::nix::DaemonStore<UnixStream>> {
+    let daemon = nix_daemon::nix::DaemonStore::builder()
+        .connect_unix(DAEMON_SOCKET_PATH)
+        .await
+        .map_err(|e| AtticError::StoreConnectError { reason: e.to_string() })?;
+    Ok(daemon)
+}
+
 impl NixStore {
     pub async fn connect() -> AtticResult<Self> {
         Ok(Self {
-            daemon: Arc::new(Mutex::new(
-                nix_daemon::nix::DaemonStore::builder()
-                    .connect_unix("/nix/var/nix/daemon-socket/socket")
-                    .await
-                    .map_err(|e| AtticError::StoreConnectError {
-                        reason: e.to_string(),
-                    })?,
-            )),
+            daemon: Arc::new(Mutex::new(daemon_connect().await?)),
             // TODO: Make this method async and call nix-instantiate --raw --eval -E 'builtins.storeDir'
             store_dir: PathBuf::from_str("/nix/store").unwrap(),
         })
@@ -100,36 +99,31 @@ impl NixStore {
         &self,
         store_path: impl AsRef<StorePath>,
     ) -> impl Stream<Item = AtticResult<Vec<u8>>> + Unpin + Send {
-        let full_path = self.get_full_path(store_path);
-        Box::pin(try_stream! {
-            let mut child = Command::new("nix-store")
-                .arg("--dump")
-                .arg("--")
-                .arg(&full_path)
-                .stdout(Stdio::piped())
-                .stderr(Stdio::null())
-                .spawn()?;
+        let full_store_path = self.get_full_path(store_path);
+        let full_store_path_str = full_store_path
+            .to_str()
+            // TODO Move UTF-8 check to StorePath creation.
+            .unwrap()
+            .to_owned();
 
-            let mut stdout = child.stdout.take().expect("stdout is piped");
+        // We create a new store connection, because the
+        // implementation of daemon.nar_from_path is fragile.
+        //
+        // We also want to stream multiple NARs at the same time,
+        // which wouldn't work if we keep holding the daemon
+        // connection mutex.
+        let setup_fn = async move {
+            let daemon = daemon_connect().await?;
 
-            // This size is arbitrary. We read in "large enough" chunks.
-            let mut buf = vec![0u8; 16 << 20];
+            Ok::<_, AtticError>(daemon.nar_from_path(full_store_path_str))
+        };
 
-            loop {
-                let n = stdout.read(&mut buf).await?;
-                if n == 0 {
-                    break;
-                }
-                yield buf[..n].to_vec();
+        Box::pin(stream::once(setup_fn).then(async |s| {
+            match s {
+                Ok(stream) => stream.then(async |i| i.map_err(|e| AtticError::NarFromPathError { reason: e.to_string() })).left_stream(),
+                Err(e) => stream::once(async move { Err(e) }).right_stream(),
             }
-
-            let status = child.wait().await?;
-            if !status.success() {
-                Err(std::io::Error::other(
-                    format!("nix-store --dump exited with {status}"),
-                ))?;
-            }
-        })
+        }).flatten())
     }
 
     /// Returns the closure of a valid path.
