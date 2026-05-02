@@ -81,14 +81,30 @@ let
 
   storageModules = {
     local = {};
-    minio = let
-      accessKey = "legit";
-      secretKey = "111-1111111";
+    garage = let
+      accessKey = "GKaaaaaaaaaaaaaaaaaaaaaaaa";
+      secretKey = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     in {
-      server = {
-        services.minio = {
+      server = { pkgs, ...}: {
+        services.garage = {
           enable = true;
-          rootCredentialsFile = "/etc/minio.env";
+          package = pkgs.garage_2;
+
+          settings = {
+            replication_factor = 1;
+            consistent_mode = "consistent";
+
+            rpc_bind_addr = "[::]:3901";
+            rpc_public_addr = "[::]:3901";
+            rpc_secret = "5c1915fa04d0b6739675c61bf5907eb0fe3d9c69850c83820f51b4d25d13868c";
+
+            s3_api = {
+              s3_region = "garage";
+              api_bind_addr = "[::]:9000";
+              root_domain = ".s3.garage";
+            };
+
+          };
         };
 
         # For testing only - Don't actually do this
@@ -103,8 +119,9 @@ let
           storage = {
             type = "s3";
             endpoint = "http://server:9000";
-            region = "us-east-1";
+            region = "garage";
             bucket = "celler";
+
             credentials = {
               access_key_id = accessKey;
               secret_access_key = secretKey;
@@ -112,10 +129,25 @@ let
           };
         };
       };
+
+      # Heavily inspired by the Nixpkgs atticd test.
       testScript = ''
-        server.succeed("mkdir /var/lib/minio/data/celler")
-        server.succeed("chown minio: /var/lib/minio/data/celler")
-        client.wait_until_succeeds("curl http://server:9000", timeout=20)
+        server.wait_for_unit("garage.service")
+        server.wait_for_open_port(3901)
+
+        # Create cluster
+        node_id = server.succeed("garage status | tail -n1 | cut -d' ' -f1")
+        server.succeed(f"garage layout assign -z dc1 -c 128M {node_id}")
+        server.succeed("garage layout apply --version 1")
+
+        # Create bucket
+        server.succeed("garage bucket create celler")
+
+        # Create access keys
+        server.succeed("garage key import ${accessKey} ${secretKey} --yes")
+        server.succeed("garage bucket allow --read --write --owner celler --key ${accessKey}")
+
+        server.wait_for_open_port(9000)
       '';
     };
   };
@@ -126,7 +158,7 @@ in {
       default = "sqlite";
     };
     storage = lib.mkOption {
-      type = types.enum [ "local" "minio" ];
+      type = types.enum [ "local" "garage" ];
       default = "local";
     };
   };
