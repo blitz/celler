@@ -8,3 +8,10 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    groups:
+      rust-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
