@@ -15,6 +15,7 @@ pub struct Login {
     endpoint: String,
 
     /// Access token.
+    #[clap(env = "CELLER_TOKEN")]
     token: Option<String>,
 
     /// Set the server as the default.
