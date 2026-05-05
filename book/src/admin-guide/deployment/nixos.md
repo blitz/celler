@@ -6,7 +6,7 @@ Celler provides [a NixOS module](https://github.com/blitz/celler/blob/main/nixos
 
 1. A machine running NixOS
 1. _(Optional)_ A dedicated bucket on S3 or a S3-compatible storage service
-    - You can either [set up Minio](https://search.nixos.org/options?query=services.minio) or use a hosted service like [Backblaze B2](https://www.backblaze.com/b2/docs) and [Cloudflare R2](https://developers.cloudflare.com/r2).
+    - You can either [set up Garage](https://search.nixos.org/options?query=services.garage) or use a hosted service like [Backblaze B2](https://www.backblaze.com/b2/docs) and [Cloudflare R2](https://developers.cloudflare.com/r2).
 1. _(Optional)_ A PostgreSQL database
 
 ## Generating the Credentials File
