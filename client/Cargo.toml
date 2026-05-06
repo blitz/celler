@@ -31,7 +31,7 @@ xdg.workspace = true
 async-channel = "2.5.0"
 clap_complete = "4.6.3"
 const_format = "0.2.36"
-dialoguer = "0.11.0"
+dialoguer = "0.12.0"
 indicatif = "0.18.0"
 notify = { version = "8.1.0", default-features = false, features = ["macos_kqueue"] }
 reqwest = { version = "0.12.22", default-features = false, features = ["json", "rustls-tls", "rustls-tls-native-roots", "stream"] }
