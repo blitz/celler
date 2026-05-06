@@ -29,7 +29,7 @@ use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, DecodeError, 
 use displaydoc::Display;
 use ed25519_compact::{Error as SignatureError, KeyPair, PublicKey, Signature};
 
-use crate::{AtticError, error::AtticResult};
+use crate::{error::AtticResult, AtticError};
 
 #[cfg(test)]
 mod tests;

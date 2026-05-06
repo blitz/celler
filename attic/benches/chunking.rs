@@ -1,5 +1,5 @@
-use std::io::Cursor;
 use std::hint::black_box;
+use std::io::Cursor;
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use futures::StreamExt;

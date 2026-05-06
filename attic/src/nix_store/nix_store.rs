@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr as _;
 use std::sync::Arc;
 
-use futures::{Stream, StreamExt, stream};
+use futures::{stream, Stream, StreamExt};
 use nix_daemon::{Progress, Store};
 use tokio::net::UnixStream;
 use tokio::sync::Mutex;
@@ -29,7 +29,9 @@ async fn daemon_connect() -> AtticResult<nix_daemon::nix::DaemonStore<UnixStream
     let daemon = nix_daemon::nix::DaemonStore::builder()
         .connect_unix(DAEMON_SOCKET_PATH)
         .await
-        .map_err(|e| AtticError::StoreConnectError { reason: e.to_string() })?;
+        .map_err(|e| AtticError::StoreConnectError {
+            reason: e.to_string(),
+        })?;
     Ok(daemon)
 }
 
@@ -118,12 +120,20 @@ impl NixStore {
             Ok::<_, AtticError>(daemon.nar_from_path(full_store_path_str))
         };
 
-        Box::pin(stream::once(setup_fn).then(async |s| {
-            match s {
-                Ok(stream) => stream.then(async |i| i.map_err(|e| AtticError::NarFromPathError { reason: e.to_string() })).left_stream(),
-                Err(e) => stream::once(async move { Err(e) }).right_stream(),
-            }
-        }).flatten())
+        Box::pin(
+            stream::once(setup_fn)
+                .then(async |s| match s {
+                    Ok(stream) => stream
+                        .then(async |i| {
+                            i.map_err(|e| AtticError::NarFromPathError {
+                                reason: e.to_string(),
+                            })
+                        })
+                        .left_stream(),
+                    Err(e) => stream::once(async move { Err(e) }).right_stream(),
+                })
+                .flatten(),
+        )
     }
 
     /// Returns the closure of a valid path.
@@ -161,13 +171,12 @@ impl NixStore {
                 // order.
                 result.insert(unqueried_path.clone());
 
-                let path_info = self
-                    .query_path_info(&unqueried_path)
-                    .await?
-                    .ok_or(AtticError::InvalidStorePath {
+                let path_info = self.query_path_info(&unqueried_path).await?.ok_or(
+                    AtticError::InvalidStorePath {
                         path: unqueried_path.base_name,
                         reason: "Missing reference",
-                    })?;
+                    },
+                )?;
 
                 unqueried_paths.extend_from_slice(&path_info.references);
             }
