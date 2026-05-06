@@ -39,7 +39,7 @@ features = [
 ]
 
 [dev-dependencies]
-criterion = { version = "0.6.0", features = ["html_reports", "async_tokio"] }
+criterion = { version = "0.8.2", features = ["html_reports", "async_tokio"] }
 fastcdc = { version = "3.2.1", features = ["tokio"] }
 serde_json.workspace = true
 
