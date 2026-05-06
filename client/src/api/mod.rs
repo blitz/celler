@@ -176,8 +176,8 @@ impl ApiClient {
         force_preamble: bool,
     ) -> Result<Option<UploadPathResult>>
     where
-        S: TryStream<Ok = Bytes> + Send + Sync + 'static,
-        S::Error: Into<Box<dyn StdError + Send + Sync>> + Send + Sync,
+        S: TryStream<Ok = Bytes> + Send + 'static,
+        S::Error: Into<Box<dyn StdError + Send + Sync>> + Send,
     {
         let endpoint = self.endpoint.join("_api/v1/upload-path")?;
         let upload_info_json = serde_json::to_string(&nar_info)?;

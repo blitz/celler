@@ -14,6 +14,9 @@ pub enum AtticError {
     /// Failed to connect to the Nix store: {reason}
     StoreConnectError { reason: String },
 
+    /// Failed to get NAR from path: {reason}
+    NarFromPathError { reason: String },
+
     /// Invalid store path {path:?}: {reason}
     InvalidStorePath { path: PathBuf, reason: &'static str },
 
@@ -43,6 +46,7 @@ impl AtticError {
     pub fn name(&self) -> &'static str {
         match self {
             Self::StoreConnectError { .. } => "StoreConnectError",
+            Self::NarFromPathError { .. } => "NarFromPathError",
             Self::InvalidStorePath { .. } => "InvalidStorePath",
             Self::InvalidStorePathName { .. } => "InvalidStorePathName",
             Self::InvalidStorePathHash { .. } => "InvalidStorePathHash",

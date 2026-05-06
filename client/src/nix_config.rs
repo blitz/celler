@@ -56,11 +56,15 @@ enum Line {
 impl std::fmt::Display for NixConfig {
     /// Reserialize the configuration back to a string.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", self.lines
-            .iter()
-            .map(|l| l.to_string())
-            .collect::<Vec<_>>()
-            .join("\n"))
+        writeln!(
+            f,
+            "{}",
+            self.lines
+                .iter()
+                .map(|l| l.to_string())
+                .collect::<Vec<_>>()
+                .join("\n")
+        )
     }
 }
 
@@ -157,7 +161,10 @@ impl std::fmt::Display for Line {
                 comment,
             } => {
                 let cmt = comment.as_deref().unwrap_or("");
-                write!(f, "{whitespace_s}{key}{whitespace_l}={whitespace_r}{value}{cmt}")
+                write!(
+                    f,
+                    "{whitespace_s}{key}{whitespace_l}={whitespace_r}{value}{cmt}"
+                )
             }
         }
     }
