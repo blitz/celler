@@ -13,7 +13,7 @@ attic = { workspace = true, default-features = true }
 
 anyhow.workspace = true
 bytes.workspace = true
-clap.workspace = true
+clap = { workspace = true, features = ["env"] }
 displaydoc.workspace = true
 enum-as-inner.workspace = true
 futures.workspace = true
