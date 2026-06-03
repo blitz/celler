@@ -18,10 +18,10 @@ serde.workspace = true
 serde_with.workspace = true
 sha2.workspace = true
 
-ed25519-compact = "2.2.0"
+ed25519-compact = "2.3.0"
 fastcdc = "3.2.1"
 nix-base32 = "0.2.0"
-pin-project = "1.1.10"
+pin-project = "1.1.13"
 tempfile = "3"
 wildmatch = "2.4.0"
 nix-daemon = { git = "https://codeberg.org/blitz/gorgon.git", branch = "nix-daemon" }
