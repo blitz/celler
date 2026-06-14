@@ -8,13 +8,9 @@ It is derived from [Attic](https://github.com/zhaofengli/attic). See the [migrat
 ## Rationale for Forking
 
 We love Attic for its design, clear code and ease-of-use, but found it
-lacking for production setups. The current delta to between Celler and
-Attic is:
+lacking for production setups. Development also seems to be stalled.
 
-- ✅ Up-to-date dependencies.
-- ✅ Remove C++ bindings to `libnixstore`.
-- ✅ Simplified Nix and CI setup
-- ✅ Use pure Rust code to talk to the Nix daemon.
+See the [changelog](CHANGELOG.md) for the current list of changes compared to Attic.
 
 We are also interested in the following features and will work on them
 as time permits.
